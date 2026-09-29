@@ -48,6 +48,24 @@
   .graf-kpi{background:var(--ink);border-radius:var(--radius);padding:12px 14px;color:#fff;}
   .graf-kpi .label{font-size:11px;color:#B8B8B2;margin-bottom:4px;}
   .graf-kpi .value{font-size:19px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+  /* Tarjeta "Promedios históricos" */
+  .graf-prom-cols{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px;}
+  @media(min-width:640px){ .graf-prom-cols{grid-template-columns:repeat(3,1fr);} }
+  .graf-prom-col{background:#161615;border:1px solid #262624;border-radius:10px;padding:12px 14px;border-top:3px solid var(--c);}
+  .graf-prom-col .graf-prom-tit{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#fff;margin-bottom:10px;}
+  .graf-prom-col .graf-prom-tit i{width:9px;height:9px;border-radius:2px;background:var(--c);display:inline-block;}
+  .graf-prom-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:5px 0;}
+  .graf-prom-row + .graf-prom-row{border-top:1px dashed #2E2E2B;}
+  .graf-prom-row .k{font-size:11px;color:#B8B8B2;}
+  .graf-prom-row .v{font-family:'IBM Plex Mono',monospace;font-weight:600;color:#fff;font-size:15px;white-space:nowrap;}
+  .graf-prom-row.big .v{font-size:19px;}
+  .graf-prom-base{font-size:10.5px;color:#8A8A85;margin-top:6px;}
+  .graf-prom-split{margin-top:16px;}
+  .graf-prom-split .graf-prom-split-tit{font-size:12px;color:#D8D8D4;margin-bottom:7px;}
+  .graf-prom-bar{display:flex;height:26px;border-radius:6px;overflow:hidden;background:#242422;}
+  .graf-prom-bar > div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#0A0A0A;white-space:nowrap;overflow:hidden;min-width:0;}
+  .graf-prom-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 14px;margin-top:10px;font-size:11.5px;color:#D8D8D4;}
+  .graf-prom-foot b{font-family:'IBM Plex Mono',monospace;}
   .graf-heat{display:grid;grid-template-columns:40px repeat(12,minmax(0,1fr));gap:2px;align-items:center;}
   .graf-heat .graf-heat-label{font-size:10px;color:#B8B8B2;}
   .graf-heat .graf-heat-cell{height:20px;border-radius:3px;}
@@ -115,6 +133,12 @@
     color:var(--ink); font-size:18px; font-weight:600; font-family:'IBM Plex Mono',monospace;
   }
   body.amounts-hidden .kpi.accent .value::after{ color:var(--accent-ink); }
+  body.amounts-hidden .graf-kpi .value{ position:relative; color:transparent !important; }
+  body.amounts-hidden .graf-kpi .value::after{
+    content:'••••••';
+    position:absolute; left:0; top:0;
+    color:#fff; font-size:19px; font-weight:600; font-family:'IBM Plex Mono',monospace;
+  }
   #btnToggleAmounts{ font-size:15px; line-height:1; padding:7px 11px; }
 
   .info-badge{position:relative;display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--line-strong);color:#fff;font-size:9.5px;font-weight:700;font-family:'IBM Plex Sans',sans-serif;text-transform:none;letter-spacing:0;vertical-align:middle;margin-left:5px;cursor:help;user-select:none;}
@@ -929,7 +953,6 @@
   <div id="module-presupuestoanual" class="module-block">
     <header class="app">
       <div class="app-top">
-        <div class="brand"><div class="brand-mark">V</div><div class="brand-text"><h1>Vernier Tacuarembó</h1><span>Presupuesto Anual</span></div></div>
       </div>
     </header>
     <main>
@@ -941,6 +964,7 @@
           <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Año a presupuestar</label><select id="pa-anioObj"></select></div>
           <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">% de ajuste (ej: inflación esperada)</label><input type="number" id="pa-ajustePct" value="0" step="0.1" style="width:110px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;"></div>
           <button class="btn" id="pa-btnGenerar">Generar presupuesto</button>
+          <button class="btn danger" id="pa-btnReset" title="Borra todo el presupuesto del año a presupuestar, para volver a generarlo desde cero">Resetear presupuesto</button>
         </div>
         <p class="hint" style="margin:10px 0 0;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
       </div>
@@ -973,7 +997,6 @@
   <div id="module-graficos" class="module-block">
     <header class="app">
       <div class="app-top">
-        <div class="brand"><div class="brand-mark">V</div><div class="brand-text"><h1>Vernier Tacuarembó</h1><span>Gráficos</span></div></div>
         <div class="toolbar"><div class="year-select"><select id="gr-yearSelect"></select></div></div>
       </div>
     </header>
@@ -983,6 +1006,12 @@
       <div class="graf-kpis" id="gr-kpis"></div>
 
       <div class="graf-grid">
+        <div class="graf-card graf-wide">
+          <h3>Promedios históricos</h3>
+          <p class="graf-sub" id="gr-promSub">Todo el histórico cargado, sin importar el año elegido arriba.</p>
+          <div id="gr-promedios"></div>
+        </div>
+
         <div class="graf-card graf-wide">
           <h3>Ventas por año</h3>
           <p class="graf-sub">Histórico completo. El año elegido arriba queda resaltado.</p>
@@ -1197,6 +1226,9 @@
       const hidden = document.body.classList.toggle('amounts-hidden');
       ev.currentTarget.innerHTML = hidden ? '&#128064;' : '&#128065;';
       ev.currentTarget.title = hidden ? 'Mostrar montos' : 'Ocultar montos';
+      // Los números de los gráficos (Chart.js) quedan pintados en el canvas — hay que
+      // volver a dibujarlos para que respeten el nuevo estado oculto/visible.
+      renderGraficos();
     });
 
     document.getElementById('moduleSwitchNav').addEventListener('click', (ev)=>{
@@ -1206,6 +1238,7 @@
     });
 
     document.getElementById('pa-btnGenerar').addEventListener('click', paGenerarDesdeReferencia);
+    document.getElementById('pa-btnReset').addEventListener('click', paResetPresupuesto);
 
     document.getElementById('ini-histIndFiltros').addEventListener('click', (ev)=>{
       const btn = ev.target.closest('button[data-hist-ind]');
@@ -4301,10 +4334,18 @@
   const grCharts = {};
   function grDestroy(id){ if(grCharts[id]){ grCharts[id].destroy(); delete grCharts[id]; } }
   const GR_COLORS = { teal:'#8FE0D6', amber:'#FBBF6B', coral:'#FF8B66', pink:'#F49AC2', violet:'#B7A6F5', gray:'#8A8A85', grayDim:'#5A5A55', green:'#4ADE80', red:'#FF6B6B' };
+  // El toggle del ojo (ocultar montos) es puro CSS en el resto del dashboard, pero los
+  // números de Chart.js quedan "pintados" en el canvas y no se pueden tapar con CSS —
+  // por eso acá se enmascaran a mano en los ticks y en el tooltip.
+  function grHidden(){ return document.body.classList.contains('amounts-hidden'); }
+  function grMoneyStr(n){ return grHidden() ? '•••' : ('$ '+fmt(n)); }
+  function grTooltipMasked(){
+    return { callbacks: { label: (ctx)=> grHidden() ? ' •••' : ` ${ctx.dataset.label ? ctx.dataset.label+': ' : ''}$ ${fmt(ctx.parsed.y ?? ctx.parsed)}` } };
+  }
   function grBaseOpts(extra){
     return Object.assign({
       responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{ display:false }, tooltip:{ callbacks:{} } },
+      plugins:{ legend:{ display:false }, tooltip: grTooltipMasked() },
       scales:{
         x:{ grid:{ display:false }, border:{ color:'#3A3A38' }, ticks:{ color:'#B8B8B2', font:{ size:10.5 } } },
         y:{ grid:{ color:'#242422' }, border:{ display:false }, ticks:{ color:'#B8B8B2', font:{ size:10.5 }, maxTicksLimit:5 } }
@@ -4312,45 +4353,134 @@
     }, extra||{});
   }
 
+  function grRenderPromedios(ventasTodas, comprasTodas, gastosTodos){
+    const cont = document.getElementById('gr-promedios');
+    if(!cont) return;
+    const key = (a,m)=>a+'|'+m;
+    const vMap = {}, cMap = {}, gMap = {};
+    (ventasTodas||[]).forEach(r=>{ const k=key(r.anio,r.mes); vMap[k]=(vMap[k]||0)+(r.efectivo||0)+(r.credito||0); });
+    (comprasTodas||[]).forEach(r=>{ const k=key(r.anio,r.mes); cMap[k]=(cMap[k]||0)+(r.inicial||0)+(r.reposicion||0)+(r.otros||0); });
+    (gastosTodos||[]).forEach(r=>{ const k=key(r.anio,r.mes); gMap[k]=(gMap[k]||0)+(r.monto||0); });
+
+    // Años completos = los 12 meses con venta cargada
+    const aniosVenta = Array.from(new Set((ventasTodas||[]).map(r=>r.anio))).sort((a,b)=>a-b);
+    const aniosCompletos = aniosVenta.filter(a=>MESES.every(m=>(vMap[key(a,m)]||0)>0));
+
+    function calc(map){
+      const totAnio = a=>MESES.reduce((s,m)=>s+(map[key(a,m)]||0),0);
+      const anios = aniosCompletos.filter(a=>totAnio(a)>0);
+      const anual = anios.length ? anios.reduce((s,a)=>s+totAnio(a),0)/anios.length : null;
+      const valores = Object.values(map).filter(v=>v>0);
+      const mensual = valores.length ? valores.reduce((s,v)=>s+v,0)/valores.length : null;
+      return { anual, mensual, nAnios:anios.length, desde:anios[0], hasta:anios[anios.length-1], nMeses:valores.length };
+    }
+    const venta = calc(vMap), compra = calc(cMap), fijo = calc(gMap);
+
+    const money = v => v==null ? '—' : grMoneyStr(v);
+    function base(s){
+      const a = s.nAnios ? `${s.nAnios} año${s.nAnios>1?'s':''} completo${s.nAnios>1?'s':''} (${s.desde===s.hasta?s.desde:s.desde+'–'+s.hasta})` : 'sin años completos todavía';
+      return `Anual: ${a}<br>Mensual: ${s.nMeses} mes${s.nMeses===1?'':'es'} cargado${s.nMeses===1?'':'s'}`;
+    }
+    function col(titulo, color, s){
+      return `<div class="graf-prom-col" style="--c:${color};">
+        <div class="graf-prom-tit"><i></i>${titulo}</div>
+        <div class="graf-prom-row big"><span class="k">Promedio anual</span><span class="v">${money(s.anual)}</span></div>
+        <div class="graf-prom-row"><span class="k">Promedio mensual</span><span class="v">${money(s.mensual)}</span></div>
+        <div class="graf-prom-base">${base(s)}</div>
+      </div>`;
+    }
+
+    // De cada $100 que se vende (en base a los promedios mensuales)
+    // Para que la comparación sea justa, se usan solo los meses que tienen venta Y costo fijo
+    // cargados (si el costo fijo arrancó a registrarse más tarde que la venta, no se mezclan períodos).
+    let split = '';
+    const mesesComunes = Object.keys(vMap).filter(k=>(vMap[k]||0)>0 && (gMap[k]||0)>0);
+    const baseMeses = mesesComunes.length ? mesesComunes : Object.keys(vMap).filter(k=>(vMap[k]||0)>0);
+    const sV = baseMeses.reduce((s,k)=>s+(vMap[k]||0),0);
+    const sC = baseMeses.reduce((s,k)=>s+(cMap[k]||0),0);
+    const sG = baseMeses.reduce((s,k)=>s+(gMap[k]||0),0);
+    if(sV > 0){
+      const pC = Math.max(0,sC/sV);
+      const pF = Math.max(0,sG/sV);
+      const pQ = 1 - pC - pF;
+      const tot = Math.max(1, pC+pF+Math.max(0,pQ));
+      const seg = (p,color,txt)=> p>0 ? `<div style="width:${(p/tot*100).toFixed(2)}%;background:${color};" title="${txt} ${fmtPct(p)}">${p/tot>=0.09?Math.round(p*100)+'%':''}</div>` : '';
+      const resultadoMes = (sV - sC - sG)/baseMeses.length;
+      split = `<div class="graf-prom-split">
+        <div class="graf-prom-split-tit">De cada $100 que vendés, en promedio: <span style="color:#8A8A85;font-size:10.5px;">(sobre ${baseMeses.length} meses con venta y costo fijo cargados)</span></div>
+        <div class="graf-prom-bar">
+          ${seg(pC, GR_COLORS.amber, 'Compras')}${seg(pF, GR_COLORS.coral, 'Costo fijo')}${seg(Math.max(0,pQ), GR_COLORS.green, 'Queda')}
+        </div>
+        <div class="graf-prom-foot">
+          <span class="graf-legend" style="margin:0;">
+            <span><i style="background:${GR_COLORS.amber};"></i>Compras $${Math.round(pC*100)}</span>
+            <span><i style="background:${GR_COLORS.coral};"></i>Costo fijo $${Math.round(pF*100)}</span>
+            <span><i style="background:${pQ>=0?GR_COLORS.green:GR_COLORS.red};"></i>${pQ>=0?'Te quedan':'Faltan'} $${Math.abs(Math.round(pQ*100))}</span>
+          </span>
+          <span>Resultado mensual promedio: <b style="color:${resultadoMes>=0?GR_COLORS.green:GR_COLORS.red};">${resultadoMes<0&&!grHidden()?'-':''}${grMoneyStr(Math.abs(resultadoMes))}</b></span>
+        </div>
+      </div>`;
+    }
+
+    cont.innerHTML = `<div class="graf-prom-cols">
+        ${col('Venta', GR_COLORS.teal, venta)}
+        ${col('Compras', GR_COLORS.amber, compra)}
+        ${col('Costo fijo', GR_COLORS.coral, fijo)}
+      </div>${split}`;
+  }
+
   async function renderGraficos(){
     if(!document.getElementById('gr-kpis') || typeof Chart === 'undefined') return;
     initYearSelect('gr-yearSelect');
 
-    const { data: ventasTodas, error: e1 } = await sb.from('ventas').select('anio,mes,efectivo,credito');
-    if(e1){ showToast('Error cargando gráficos: '+e1.message, true); return; }
+    const [{ data: ventasTodas, error: e1 }, { data: comprasTodas, error: e2 }, { data: presTodas, error: e3 }] = await Promise.all([
+      sb.from('ventas').select('anio,mes,efectivo,credito'),
+      sb.from('compras').select('anio,mes,inicial,reposicion,otros'),
+      sb.from('presupuesto').select('anio,mes,categoria,monto')
+    ]);
+    if(e1 || e2 || e3){ showToast('Error cargando gráficos: '+((e1||e2||e3).message), true); return; }
+    const esTodos = state.activeYear === 'TODOS';
     const anios = Array.from(new Set((ventasTodas||[]).map(r=>r.anio))).sort((a,b)=>a-b);
-    const anioEfectivo = state.activeYear === 'TODOS'
+    // Para los gráficos que necesitan SÍ o SÍ un único año (mes a mes, compras por mes,
+    // resultado mensual), con "Todos" elegido se usa el año más reciente con datos —
+    // no existe una forma sensata de "aplanar" 12 meses de varios años en una sola grilla.
+    const anioEfectivo = esTodos
       ? (anios.length ? anios[anios.length-1] : new Date().getFullYear())
       : state.activeYear;
     const anioAnterior = anioEfectivo - 1;
-
-    const [{ data: comprasAnio, error: e2 }, { data: presAnio, error: e3 }] = await Promise.all([
-      sb.from('compras').select('anio,mes,inicial,reposicion,otros').eq('anio', anioEfectivo),
-      sb.from('presupuesto').select('anio,mes,categoria,monto').eq('anio', anioEfectivo)
-    ]);
-    if(e2 || e3){ showToast('Error cargando gráficos: '+((e2||e3).message), true); return; }
+    const presFiltradoTodos = (presTodas||[]).filter(r=>!presupuestoExcluida(r.categoria) && presupuestoTipoDe(r.categoria)!=='interes' && presupuestoTipoDe(r.categoria)!=='compra');
 
     const ventasPorAnio = anios.map(a=>(ventasTodas||[]).filter(r=>r.anio===a).reduce((s,r)=>s+(r.efectivo||0)+(r.credito||0),0));
     const ventasAnioActual = MESES.map(mes=>{ const r=(ventasTodas||[]).find(x=>x.anio===anioEfectivo&&x.mes===mes); return r?(r.efectivo||0)+(r.credito||0):0; });
     const ventasAnioAnt = MESES.map(mes=>{ const r=(ventasTodas||[]).find(x=>x.anio===anioAnterior&&x.mes===mes); return r?(r.efectivo||0)+(r.credito||0):0; });
-    const ventaTotalAnio = ventasAnioActual.reduce((a,b)=>a+b,0);
-    const ventaTotalAnt = ventasAnioAnt.reduce((a,b)=>a+b,0);
-    const efectivoTotal = MESES.reduce((s,mes)=>{ const r=(ventasTodas||[]).find(x=>x.anio===anioEfectivo&&x.mes===mes); return s+(r?.efectivo||0); },0);
+
+    // KPIs y las dos donas: con "Todos" suman el histórico completo, no solo el año más reciente.
+    const ventaTotalAnio = esTodos ? ventasPorAnio.reduce((a,b)=>a+b,0) : ventasAnioActual.reduce((a,b)=>a+b,0);
+    const efectivoTotal = esTodos
+      ? (ventasTodas||[]).reduce((s,r)=>s+(r.efectivo||0),0)
+      : MESES.reduce((s,mes)=>{ const r=(ventasTodas||[]).find(x=>x.anio===anioEfectivo&&x.mes===mes); return s+(r?.efectivo||0); },0);
     const creditoTotal = ventaTotalAnio - efectivoTotal;
 
-    const comprasIni = MESES.map(mes=>{ const r=(comprasAnio||[]).find(x=>x.mes===mes); return r?.inicial||0; });
-    const comprasRep = MESES.map(mes=>{ const r=(comprasAnio||[]).find(x=>x.mes===mes); return (r?.reposicion||0)+(r?.otros||0); });
-    const compraTotalAnio = comprasIni.reduce((a,b)=>a+b,0) + comprasRep.reduce((a,b)=>a+b,0);
+    const comprasAnio = (comprasTodas||[]).filter(r=>r.anio===anioEfectivo);
+    const comprasIni = MESES.map(mes=>{ const r=comprasAnio.find(x=>x.mes===mes); return r?.inicial||0; });
+    const comprasRep = MESES.map(mes=>{ const r=comprasAnio.find(x=>x.mes===mes); return (r?.reposicion||0)+(r?.otros||0); });
+    const compraTotalAnio = esTodos
+      ? (comprasTodas||[]).reduce((s,r)=>s+(r.inicial||0)+(r.reposicion||0)+(r.otros||0),0)
+      : comprasIni.reduce((a,b)=>a+b,0) + comprasRep.reduce((a,b)=>a+b,0);
 
-    const presFiltrado = (presAnio||[]).filter(r=>!presupuestoExcluida(r.categoria) && presupuestoTipoDe(r.categoria)!=='interes' && presupuestoTipoDe(r.categoria)!=='compra');
+    const presFiltrado = presFiltradoTodos.filter(r=>r.anio===anioEfectivo);
     const gastosPorMes = MESES.map(mes=>presFiltrado.filter(r=>r.mes===mes).reduce((s,r)=>s+(r.monto||0),0));
-    const gastoTotalAnio = gastosPorMes.reduce((a,b)=>a+b,0);
+    const gastoTotalAnio = esTodos
+      ? presFiltradoTodos.reduce((s,r)=>s+(r.monto||0),0)
+      : gastosPorMes.reduce((a,b)=>a+b,0);
+    // La dona de gastos fijos usa el mismo criterio: histórico completo con "Todos", solo el año elegido si no.
+    const presParaDona = esTodos ? presFiltradoTodos : presFiltrado;
     // Agrupado en categorías fijas: Alquiler, Impuestos (BPS+DGI), Sueldo Andrés,
     // Sueldo funcionarios (Melani+Camila), y el resto en "Otros". Se matchea por nombre
     // (sin tildes, sin mayúsculas) para no depender de cómo esté escrito exacto cada ítem.
     function grNorm(s){ return (s||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); }
     const porCategoria = {};
-    presFiltrado.forEach(r=>{ porCategoria[r.categoria] = (porCategoria[r.categoria]||0) + (r.monto||0); });
+    presParaDona.forEach(r=>{ porCategoria[r.categoria] = (porCategoria[r.categoria]||0) + (r.monto||0); });
     let gAlquiler=0, gImpuestos=0, gSueldoAndres=0, gSueldoFuncionarios=0, gOtros=0;
     Object.entries(porCategoria).forEach(([cat, monto])=>{
       const n = grNorm(cat);
@@ -4369,22 +4499,31 @@
     const utilidadAnio = ventaTotalAnio - compraTotalAnio - gastoTotalAnio;
 
     document.getElementById('gr-kpis').innerHTML = `
-      <div class="graf-kpi"><div class="label">Venta ${anioEfectivo}</div><div class="value">$ ${fmt(ventaTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Compras ${anioEfectivo}</div><div class="value">$ ${fmt(compraTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Gastos fijos ${anioEfectivo}</div><div class="value">$ ${fmt(gastoTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Resultado ${anioEfectivo}</div><div class="value" style="color:${utilidadAnio>=0?GR_COLORS.green:GR_COLORS.red};">$ ${fmt(utilidadAnio)}</div></div>`;
+      <div class="graf-kpi"><div class="label">Venta ${anioEfectivo}</div><div class="value">${grMoneyStr(ventaTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Compras ${anioEfectivo}</div><div class="value">${grMoneyStr(compraTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Gastos fijos ${anioEfectivo}</div><div class="value">${grMoneyStr(gastoTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Resultado ${anioEfectivo}</div><div class="value" style="color:${utilidadAnio>=0?GR_COLORS.green:GR_COLORS.red};">${grMoneyStr(utilidadAnio)}</div></div>`;
 
-    document.getElementById('gr-mesAMesSub').textContent = `${anioEfectivo} contra ${anioAnterior}`;
+    // 0) Promedios históricos (venta, compras y costo fijo — por año y por mes).
+    // Siempre usa TODO el histórico, no depende del año elegido arriba.
+    //  - Promedio anual: solo años completos (los 12 meses con venta cargada), para que el
+    //    año en curso a medio cargar no tire el promedio para abajo.
+    //  - Promedio mensual: todos los meses que tienen ese dato cargado (incluye el año en curso).
+    grRenderPromedios(ventasTodas, comprasTodas, presFiltradoTodos);
+
+    document.getElementById('gr-mesAMesSub').textContent = esTodos
+      ? `${anioEfectivo} contra ${anioAnterior} — año más reciente (no se puede combinar todos los años en una grilla de 12 meses)`
+      : `${anioEfectivo} contra ${anioAnterior}`;
     document.getElementById('gr-legendAnioActual').textContent = String(anioEfectivo);
     document.getElementById('gr-legendAnioAnterior').textContent = String(anioAnterior);
-    document.getElementById('gr-comprasSub').textContent = `Año ${anioEfectivo}`;
+    document.getElementById('gr-comprasSub').textContent = esTodos ? `Año ${anioEfectivo} (más reciente)` : `Año ${anioEfectivo}`;
 
     // 1) Ventas por año
     grDestroy('gr-chartVentasAnio');
     grCharts['gr-chartVentasAnio'] = new Chart(document.getElementById('gr-chartVentasAnio'), {
       type:'bar',
       data:{ labels: anios, datasets:[{ data: ventasPorAnio, backgroundColor: anios.map(a=>a===anioEfectivo?GR_COLORS.teal:GR_COLORS.grayDim), borderRadius:4, maxBarThickness:26 }] },
-      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>'$'+fmt(v)} } } })
+      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>grHidden()?'•••':'$'+fmt(v)} } } })
     });
 
     // 2) Ventas mes a mes vs año anterior
@@ -4395,7 +4534,7 @@
         { label:String(anioEfectivo), data: ventasAnioActual, backgroundColor: GR_COLORS.teal, borderRadius:3, maxBarThickness:11 },
         { label:String(anioAnterior), data: ventasAnioAnt, backgroundColor: GR_COLORS.grayDim, borderRadius:3, maxBarThickness:11 }
       ] },
-      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>fmt(v)} } } })
+      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>grHidden()?'•••':fmt(v)} } } })
     });
 
     // 3) Efectivo vs crédito
@@ -4403,7 +4542,7 @@
     grCharts['gr-chartEfeCred'] = new Chart(document.getElementById('gr-chartEfeCred'), {
       type:'doughnut',
       data:{ labels:['Crédito','Efectivo'], datasets:[{ data:[creditoTotal, efectivoTotal], backgroundColor:[GR_COLORS.teal, GR_COLORS.amber], borderWidth:3, borderColor:'#0A0A0A' }] },
-      options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ display:false } } }
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=> grHidden() ? ' •••' : ` ${ctx.label}: $ ${fmt(ctx.parsed)}` } } } }
     });
     document.getElementById('gr-legendEfeCred').innerHTML = `
       <span><i style="background:${GR_COLORS.teal};"></i>Crédito ${fmtPct(ventaTotalAnio?creditoTotal/ventaTotalAnio:0)}</span>
@@ -4415,7 +4554,7 @@
     grCharts['gr-chartGastos'] = new Chart(document.getElementById('gr-chartGastos'), {
       type:'doughnut',
       data:{ labels: gastosSlices.map(s=>s[0]), datasets:[{ data: gastosSlices.map(s=>s[1]), backgroundColor: gastosSlices.map((_,i)=>gastoColores[i%gastoColores.length]), borderWidth:3, borderColor:'#0A0A0A' }] },
-      options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ display:false } } }
+      options:{ responsive:true, maintainAspectRatio:false, cutout:'62%', plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=> grHidden() ? ' •••' : ` ${ctx.label}: $ ${fmt(ctx.parsed)}` } } } }
     });
     document.getElementById('gr-legendGastos').innerHTML = gastosSlices.length ? gastosSlices.map((s,i)=>
       `<span><i style="background:${gastoColores[i%gastoColores.length]};"></i>${escapeHtml(s[0])} ${fmtPct(gastoTotalAnio?s[1]/gastoTotalAnio:0)}</span>`
@@ -4429,7 +4568,7 @@
         { label:'Pedido inicial', data: comprasIni, backgroundColor: GR_COLORS.teal, maxBarThickness:16 },
         { label:'Reposición', data: comprasRep, backgroundColor: GR_COLORS.amber, maxBarThickness:16, borderRadius:{topLeft:3,topRight:3} }
       ] },
-      options: grBaseOpts({ scales:{ x:{ stacked:true, grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ stacked:true, grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>fmt(v)} } } })
+      options: grBaseOpts({ scales:{ x:{ stacked:true, grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ stacked:true, grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>grHidden()?'•••':fmt(v)} } } })
     });
 
     // 7) Resultado mensual
@@ -4437,7 +4576,7 @@
     grCharts['gr-chartResultado'] = new Chart(document.getElementById('gr-chartResultado'), {
       type:'bar',
       data:{ labels: MESES_CORTO, datasets:[{ data: resultadoMensual, backgroundColor: resultadoMensual.map(v=>v>=0?GR_COLORS.green:GR_COLORS.red), borderRadius:4, maxBarThickness:18 }] },
-      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>(v<0?'-':'')+'$'+fmt(Math.abs(v))} } } })
+      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>grHidden()?'•••':(v<0?'-':'')+'$'+fmt(Math.abs(v))} } } })
     });
   }
 
@@ -4563,6 +4702,15 @@
       const dp = pres ? d/pres : 0;
       return `<tr><td style="text-align:left;">${escapeHtml(cat)}</td><td class="mono">$ ${fmt(pres)}</td><td class="mono">$ ${fmt(real)}</td><td class="mono" style="color:${d>0?'var(--bad)':'var(--good)'};">${d>0?'+':''}$ ${fmt(d)}</td><td class="mono" style="color:${d>0?'var(--bad)':'var(--good)'};">${fmtPct(dp)}</td></tr>`;
     }).join('') : `<tr><td colspan="5" class="empty-row">Sin datos todavía</td></tr>`;
+  }
+
+  async function paResetPresupuesto(){
+    const anioObj = state.paAnioObj;
+    if(!confirm(`¿Borrar TODO el presupuesto de ${anioObj}?\n\nEsto no toca tus Gastos reales, solo el presupuesto proyectado. Después lo podés volver a generar las veces que quieras.`)) return;
+    const { error } = await sb.from('presupuesto_proyectado').delete().eq('anio', anioObj);
+    if(error){ showToast('Error borrando: '+error.message, true); return; }
+    showToast(`Presupuesto de ${anioObj} borrado`);
+    await renderPresupuestoAnual();
   }
 
   function showModule(name){
