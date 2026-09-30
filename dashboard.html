@@ -48,6 +48,41 @@
   .graf-kpi{background:var(--ink);border-radius:var(--radius);padding:12px 14px;color:#fff;}
   .graf-kpi .label{font-size:11px;color:#B8B8B2;margin-bottom:4px;}
   .graf-kpi .value{font-size:19px;font-weight:600;font-family:'IBM Plex Mono',monospace;}
+  /* Panel de Control: punto de equilibrio + histórico (estilo tarjeta negra de Gráficos) */
+  .ini-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;}
+  .ini-periodo-sel{display:flex;align-items:center;gap:6px;}
+  .ini-periodo-sel label{font-size:12px;color:var(--ink-soft);}
+  .ini-periodo-sel select{min-width:0;}
+  .pa-estado{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin-top:12px;padding:10px 14px;border-radius:10px;font-size:12.5px;}
+  .pa-estado.fijo{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent-ink);}
+  .pa-estado.libre{background:#FFF7E6;border:1px solid #F5C77A;color:#7A4B00;}
+  #module-presupuestoanual.pa-fijado #pa-tableBody input.cell{background:transparent;border-color:transparent;pointer-events:none;}
+  .sec-move{display:inline-flex;align-items:center;gap:2px;margin-left:10px;vertical-align:middle;opacity:.45;transition:opacity .15s;}
+  .collapsible-head:hover .sec-move, .graf-card:hover .sec-move, .sec-move:focus-within{opacity:1;}
+  .sec-move button, .sec-move .sec-drag{background:transparent;border:1px solid var(--line);color:var(--ink-soft);border-radius:6px;font-size:11px;line-height:1;padding:3px 6px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .sec-move .sec-drag{cursor:grab;letter-spacing:-1px;}
+  .graf-card .sec-move button, .graf-card .sec-move .sec-drag{border-color:#3A3A38;color:#B8B8B2;}
+  .sec-move button:hover{background:var(--accent-soft);color:var(--accent-ink);}
+  .sec-dragging{opacity:.5;outline:2px dashed var(--accent);}
+  @media (hover:none){ .sec-move{opacity:.8;} .sec-move .sec-drag{display:none;} }
+  .pe-intro{font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;}
+  .pe-controls{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 14px;margin-bottom:12px;}
+  .pe-controls label{display:block;font-size:11px;color:var(--ink-soft);margin-bottom:3px;}
+  .pe-controls select{min-width:130px;}
+  .pe-bar-wrap{margin-top:12px;}
+  .pe-bar-tit{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:5px;}
+  .pe-bar{position:relative;height:14px;border-radius:7px;background:var(--line);overflow:hidden;}
+  .pe-bar > div{height:100%;border-radius:7px;}
+  .ini-hist-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px;}
+  .ini-hist-ctrls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .ini-seg{display:inline-flex;background:#1B1B1A;border:1px solid #2E2E2B;border-radius:8px;padding:3px;gap:2px;flex-wrap:wrap;}
+  .ini-seg button{background:transparent;border:0;color:#B8B8B2;font-size:12px;padding:5px 11px;border-radius:6px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .ini-seg button.on{background:#8FE0D6;color:#0A0A0A;font-weight:600;}
+  .ini-seg-ind{margin-bottom:10px;}
+  .ini-dark-select{background:#1B1B1A;color:#fff;border:1px solid #2E2E2B;border-radius:8px;padding:6px 10px;font-size:12.5px;font-family:'IBM Plex Sans',sans-serif;}
+  .ini-dark-select:disabled{opacity:.4;}
+  .kpi .kpi-sub{font-size:11px;color:var(--ink-soft);margin-top:5px;line-height:1.35;white-space:normal;}
+  body.amounts-hidden .kpi .kpi-sub .m{visibility:hidden;}
   /* Tarjeta "Promedios históricos" */
   .graf-prom-cols{display:grid;grid-template-columns:1fr;gap:10px;margin-top:4px;}
   @media(min-width:640px){ .graf-prom-cols{grid-template-columns:repeat(3,1fr);} }
@@ -432,7 +467,7 @@
         <button data-module="ventas">Ventas / Compras / Gastos</button>
         <button data-module="presupuestoanual">Presupuesto Anual</button>
         <button data-module="flujo">Flujo de Caja</button>
-        <button data-module="pasivos">Pasivos</button>
+        <button data-module="pasivos">🔒 Pasivos</button>
         <button data-module="salud">Salud Financiera</button>
       </nav>
       <div class="module-switch-user">
@@ -447,37 +482,52 @@
   <div id="module-inicio" class="module-block active">
     <main>
       <div id="ini-banner"></div>
-      <div class="section-title"><h2>¿Cómo estoy hoy? — <span id="ini-periodoLabel"></span></h2><span class="hint">Panel de control · pulso rápido del negocio</span></div>
+      <div class="section-title ini-title"><h2>¿Cómo está hoy mi negocio?</h2>
+        <div class="ini-periodo-sel"><label for="ini-mesSelect">Ver mes</label><select id="ini-mesSelect"></select><select id="ini-anioSelect"></select></div>
+      </div>
       <div class="kpis" id="ini-kpiRow"></div>
 
-      <div class="collapsible" style="margin-top:16px;">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Punto de equilibrio del mes</h3><span class="chev">▾</span></div>
+      <div class="collapsible open" style="margin-top:16px;">
+        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Punto de equilibrio</h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
-          <div class="formrow" style="grid-template-columns:220px;max-width:240px;">
-            <div><label>Mes a analizar</label><select id="ini-peMesSelect"></select></div>
+          <p class="pe-intro">Cuánto necesitás vender para cubrir el costo fijo del negocio, <b>sin contar tu sueldo ni los pagos de deuda</b>.</p>
+          <div class="pe-controls">
+            <div class="filters" id="ini-peVistaFiltros" style="margin:0;">
+              <button type="button" data-pe-vista="mensual" class="on">Mensual</button>
+              <button type="button" data-pe-vista="anual">Anual</button>
+            </div>
+            <div><label>Año</label><select id="ini-peAnioSelect"></select></div>
+            <div id="ini-peMesWrap"><label>Mes</label><select id="ini-peMesSelect"></select></div>
           </div>
           <div class="kpis" id="ini-peKpis"></div>
+          <div id="ini-peBar"></div>
         </div>
       </div>
 
-      <div class="collapsible" style="margin-top:16px;">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Histórico</h3><span class="chev">▾</span></div>
-        <div class="collapsible-body">
-          <div class="filters" id="ini-histIndFiltros">
-            <button type="button" data-hist-ind="caja" class="on">Caja disponible</button>
-            <button type="button" data-hist-ind="venta">Venta</button>
-            <button type="button" data-hist-ind="utilidad">Utilidad</button>
-            <button type="button" data-hist-ind="margen">Margen</button>
-            <button type="button" data-hist-ind="deuda">Deuda total</button>
+      <div class="graf-card" style="margin-top:16px;">
+        <div class="ini-hist-head">
+          <div>
+            <h3>Histórico</h3>
+            <p class="graf-sub" id="ini-histSub" style="margin:0;"></p>
           </div>
-          <div class="filters" id="ini-histVistaFiltros">
-            <button type="button" data-hist-vista="mensual" class="on">Mensual</button>
-            <button type="button" data-hist-vista="anual">Anual</button>
+          <div class="ini-hist-ctrls">
+            <div class="ini-seg" id="ini-histVistaFiltros">
+              <button type="button" data-hist-vista="mensual" class="on">Mensual</button>
+              <button type="button" data-hist-vista="anual">Anual</button>
+            </div>
+            <select id="ini-histAnioSelect" class="ini-dark-select" aria-label="Año del gráfico"></select>
           </div>
-          <div id="ini-histBanner"></div>
-          <div class="barchart" id="ini-histChart"></div>
-          <div id="ini-histHint" style="display:block;margin-top:6px;font-size:11.5px;color:var(--ink-soft);"></div>
         </div>
+        <div class="ini-seg ini-seg-ind" id="ini-histIndFiltros">
+          <button type="button" data-hist-ind="caja" class="on">Caja disponible</button>
+          <button type="button" data-hist-ind="venta">Venta</button>
+          <button type="button" data-hist-ind="utilidad">Utilidad</button>
+          <button type="button" data-hist-ind="margen">Margen</button>
+        </div>
+        <div id="ini-histBanner"></div>
+        <div class="graf-legend" id="ini-histLegend"></div>
+        <div class="graf-canvas-wrap" style="height:230px;"><canvas id="ini-histCanvas" role="img" aria-label="Gráfico histórico del indicador elegido"></canvas></div>
+        <div id="ini-histHint" class="graf-sub" style="margin:8px 0 0;"></div>
       </div>
     </main>
   </div>
@@ -965,8 +1015,10 @@
           <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">% de ajuste (ej: inflación esperada)</label><input type="number" id="pa-ajustePct" value="0" step="0.1" style="width:110px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;"></div>
           <button class="btn" id="pa-btnGenerar">Generar presupuesto</button>
           <button class="btn danger" id="pa-btnReset" title="Borra todo el presupuesto del año a presupuestar, para volver a generarlo desde cero">Resetear presupuesto</button>
+          <button class="btn" id="pa-btnFijar" style="display:none;">🔒 Fijar presupuesto</button>
         </div>
-        <p class="hint" style="margin:10px 0 0;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
+        <div id="pa-estado"></div>
+        <p class="hint" style="margin:10px 0 0;font-size:11.5px;color:var(--ink-soft);line-height:1.45;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
       </div>
 
       <div class="kpis" id="pa-kpis" style="margin-top:14px;"></div>
@@ -984,9 +1036,9 @@
       <div class="collapsible open" id="pa-collapseComparativo">
         <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuestado vs. Real — <span id="pa-anioObjLabel2"></span></h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
-          <p class="hint" style="margin:0 0 10px;">Se actualiza solo a medida que cargás Gastos reales del año a presupuestar.</p>
+          <p class="hint" style="margin:0 0 10px;font-size:11.5px;color:var(--ink-soft);">Compara cada ítem contra lo presupuestado de los mismos meses que ya tienen gastos reales cargados. Se actualiza solo a medida que cargás Gastos.</p>
           <div class="table-scroll"><table>
-            <thead><tr><th style="text-align:left;">Ítem</th><th>Presupuestado</th><th>Real</th><th>Desvío $</th><th>Desvío %</th></tr></thead>
+            <thead><tr><th style="text-align:left;">Ítem</th><th>Presupuestado a la fecha</th><th>Real a la fecha</th><th>Desvío $</th><th>Desvío %</th></tr></thead>
             <tbody id="pa-comparativoBody"></tbody>
           </table></div>
         </div>
@@ -1071,6 +1123,20 @@
   const SUPABASE_URL = 'https://kijenduoyenukmsrkboq.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_32jH4sm_ItG3fmenA7bsFQ_4ckXTan7';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  // Supabase devuelve como máximo 1000 filas por consulta. "presupuesto" y "flujo_caja" ya
+  // superan eso, así que las lecturas completas se hacen de a páginas con sbAll(), para no
+  // perder filas en silencio (esto era lo que hacía que la Caja no coincidiera con Flujo de Caja).
+  async function sbAll(make){
+    const size = 1000; let all = [];
+    for(let from=0; ; from+=size){
+      const { data, error } = await make().range(from, from+size-1);
+      if(error) return { data:null, error };
+      all = all.concat(data||[]);
+      if(!data || data.length < size) break;
+    }
+    return { data: all, error: null };
+  }
 
   const MESES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
   const MESES_CORTO = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
@@ -1229,6 +1295,7 @@
       // Los números de los gráficos (Chart.js) quedan pintados en el canvas — hay que
       // volver a dibujarlos para que respeten el nuevo estado oculto/visible.
       renderGraficos();
+      renderHistorico();
     });
 
     document.getElementById('moduleSwitchNav').addEventListener('click', (ev)=>{
@@ -1239,6 +1306,7 @@
 
     document.getElementById('pa-btnGenerar').addEventListener('click', paGenerarDesdeReferencia);
     document.getElementById('pa-btnReset').addEventListener('click', paResetPresupuesto);
+    document.getElementById('pa-btnFijar').addEventListener('click', ()=>paToggleFijado(true));
 
     document.getElementById('ini-histIndFiltros').addEventListener('click', (ev)=>{
       const btn = ev.target.closest('button[data-hist-ind]');
@@ -1252,6 +1320,10 @@
       if(!btn) return;
       state.iniHistVista = btn.dataset.histVista;
       document.querySelectorAll('#ini-histVistaFiltros button').forEach(b=>b.classList.toggle('on', b===btn));
+      renderHistorico();
+    });
+    document.getElementById('ini-histAnioSelect').addEventListener('change', (ev)=>{
+      state.iniHistAnio = parseInt(ev.target.value,10);
       renderHistorico();
     });
 
@@ -1453,12 +1525,48 @@
       renderSalud();
     });
 
-    document.getElementById('ini-peMesSelect').addEventListener('change', (ev)=>{
+    // Selector de mes de las tarjetas de arriba: actualiza las tarjetas y lleva el Punto de
+    // equilibrio al mismo mes/año, para que todo el panel muestre el mismo período.
+    function iniSyncPeConTarjetas(){
+      state.iniPeAnio = state.iniAnio; state.iniPeMes = state.iniMes;
+      const peAnio = document.getElementById('ini-peAnioSelect'); if(peAnio) peAnio.value = String(state.iniAnio);
+      iniFillPeMeses(state.iniData);
+      renderPuntoEquilibrio();
+      const hSel = document.getElementById('ini-histAnioSelect');
+      if(hSel && Array.from(hSel.options).some(o=>o.value===String(state.iniAnio))){ state.iniHistAnio = state.iniAnio; hSel.value = String(state.iniAnio); renderHistorico(); }
+    }
+    document.getElementById('ini-anioSelect').addEventListener('change', (ev)=>{
       if(!state.iniData) return;
-      const periodos = iniPeriodosVCP(state.iniData);
-      const sel = periodos.find(p=>String(periodoKey(p.anio,p.mes))===ev.target.value);
-      renderPuntoEquilibrio(state.iniData, sel ? sel.anio : null, sel ? sel.mes : null);
+      state.iniAnio = parseInt(ev.target.value,10);
+      iniFillMesesTarjetas(state.iniData);
+      renderInicioKpis();
+      iniSyncPeConTarjetas();
     });
+    document.getElementById('ini-mesSelect').addEventListener('change', (ev)=>{
+      if(!state.iniData) return;
+      state.iniMes = ev.target.value;
+      renderInicioKpis();
+      iniSyncPeConTarjetas();
+    });
+    document.getElementById('ini-peVistaFiltros').addEventListener('click', (ev)=>{
+      const btn = ev.target.closest('button[data-pe-vista]');
+      if(!btn) return;
+      state.iniPeVista = btn.dataset.peVista;
+      document.querySelectorAll('#ini-peVistaFiltros button').forEach(b=>b.classList.toggle('on', b===btn));
+      renderPuntoEquilibrio();
+    });
+    document.getElementById('ini-peAnioSelect').addEventListener('change', (ev)=>{
+      if(!state.iniData) return;
+      state.iniPeAnio = parseInt(ev.target.value,10);
+      iniFillPeMeses(state.iniData);
+      renderPuntoEquilibrio();
+    });
+    document.getElementById('ini-peMesSelect').addEventListener('change', (ev)=>{
+      state.iniPeMes = ev.target.value;
+      renderPuntoEquilibrio();
+    });
+
+    initSecciones();
 
     (async ()=>{
       await Promise.all([loadVentasComprasPresupuesto(), loadFlujoCuentas(), loadPasivos(), loadVales(), loadOrdenVcpTabs()]);
@@ -1501,12 +1609,14 @@
     const gastoTotal = gastosPorMes.reduce((a,b)=>a+b,0);
     const resultado = ventaTotal - compraTotal - gastoTotal;
     const margen = ventaTotal ? resultado/ventaTotal : 0;
+    const mesesConVenta = ventasPorMes.filter(v=>v>0).length;
     document.getElementById('resumenKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Venta total ${state.activeYear}</div><div class="value">$ ${fmt(ventaTotal)}</div></div>
       <div class="kpi"><div class="label">Compra total</div><div class="value">$ ${fmt(compraTotal)}</div></div>
       <div class="kpi"><div class="label">Gasto total</div><div class="value">$ ${fmt(gastoTotal)}</div></div>
       <div class="kpi"><div class="label">Resultado</div><div class="value" style="color:${resultado>=0?'var(--good)':'var(--bad)'};">$ ${fmt(resultado)}</div></div>
-      <div class="kpi"><div class="label">Margen</div><div class="value">${fmtPct(margen)}</div></div>`;
+      <div class="kpi"><div class="label">Margen</div><div class="value">${fmtPct(margen)}</div></div>
+      <div class="kpi"><div class="label">Promedio mensual de venta${infoBadge(`Venta total de ${state.activeYear} dividida los ${mesesConVenta} meses que ya tienen venta cargada (si el año está en curso, no divide por 12).`)}</div><div class="value">$ ${fmt(mesesConVenta ? ventaTotal/mesesConVenta : 0)}</div></div>`;
     const ventaSinIva = ventaTotal/1.22, compraSinIva = compraTotal/1.22;
     const ivaVenta = ventaTotal - ventaSinIva, ivaCompra = compraTotal - compraSinIva;
     const diferenciaIva = ivaVenta - ivaCompra;
@@ -1553,7 +1663,8 @@
     document.getElementById('resumenKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Venta total (todos los años)</div><div class="value">$ ${fmt(ventaTotal)}</div></div>
       <div class="kpi"><div class="label">Compra total</div><div class="value">$ ${fmt(compraTotal)}</div></div>
-      <div class="kpi"><div class="label">Gasto total</div><div class="value">$ ${fmt(gastoTotal)}</div></div>`;
+      <div class="kpi"><div class="label">Gasto total</div><div class="value">$ ${fmt(gastoTotal)}</div></div>
+      <div class="kpi"><div class="label">Promedio mensual de venta (histórico)</div><div class="value">$ ${fmt((()=>{ const n=(state.ventasRows||[]).filter(r=>((r.efectivo||0)+(r.credito||0))>0).length; return n? ventaTotal/n : 0; })())}</div></div>`;
     document.getElementById('resumenKpisIva').innerHTML = `<div class="kpi"><div class="label">Diferencia de IVA</div><div class="value" style="font-size:12.5px;line-height:1.3;white-space:normal;">Elegí un año arriba para ver el detalle de IVA</div></div>`;
     document.getElementById('resumenTableBody').innerHTML = anios.length
       ? anios.map(a=>{
@@ -1663,13 +1774,13 @@
     if(!banner) return;
     try{
       const [ventasQ, comprasQ, presupuestoQ, pasivosQ, flujoCajaQ, flujoSaldoQ, pasivosHistQ] = await Promise.all([
-        sb.from('ventas').select('*'),
-        sb.from('compras').select('*'),
-        sb.from('presupuesto').select('*'),
+        sbAll(()=>sb.from('ventas').select('*').order('id')),
+        sbAll(()=>sb.from('compras').select('*').order('id')),
+        sbAll(()=>sb.from('presupuesto').select('*').order('id')),
         sb.from('pasivos').select('*'),
-        sb.from('flujo_caja').select('*'),
-        sb.from('flujo_saldo_inicial').select('*'),
-        sb.from('pasivos_historial').select('*'),
+        sbAll(()=>sb.from('flujo_caja').select('*').order('id')),
+        sbAll(()=>sb.from('flujo_saldo_inicial').select('*').order('id')),
+        sbAll(()=>sb.from('pasivos_historial').select('*').order('id')),
       ]);
       [ventasQ, comprasQ, presupuestoQ, pasivosQ, flujoCajaQ, flujoSaldoQ, pasivosHistQ].forEach(q=>{ if(q.error) throw q.error; });
       banner.innerHTML = '';
@@ -1691,84 +1802,193 @@
     }
   }
 
-  function renderInicio(data){
-    if(!document.getElementById('ini-kpiRow')) return;
-    const { ventas, compras, presupuesto, pasivos, flujoCaja, flujoSaldo } = data;
-
-    // ---- período de referencia: último mes con datos de ventas cargado ----
-    const ult = ultimoPeriodo(ventas);
-    document.getElementById('ini-periodoLabel').textContent = ult ? `${capitalize(ult.mes)} ${ult.anio}` : 'sin datos todavía';
-
-    let ventaMes = 0, compraMes = 0, presupuestoMes = 0;
-    if(ult){
-      ventaMes = ventas.filter(r=>r.anio===ult.anio && r.mes===ult.mes).reduce((s,r)=>s+(r.efectivo||0)+(r.credito||0), 0);
-      compraMes = compras.filter(r=>r.anio===ult.anio && r.mes===ult.mes).reduce((s,r)=>s+(r.inicial||0)+(r.reposicion||0)+(r.otros||0), 0);
-      presupuestoMes = presupuesto.filter(r=>r.anio===ult.anio && r.mes===ult.mes).reduce((s,r)=>s+(r.monto||0), 0);
-    }
-    const utilidadMes = ventaMes - compraMes - presupuestoMes;
-    const margenMes = ventaMes ? utilidadMes/ventaMes : 0;
-
-    // ---- caja disponible: para cada cuenta, saldo de cierre del último mes con saldo inicial cargado ----
-    const cuentas = Array.from(new Set([...(flujoSaldo||[]).map(r=>r.cuenta), ...(flujoCaja||[]).map(r=>r.cuenta)].filter(Boolean)));
-    let cajaTotal = 0;
-    let cajaPeriodo = null;
-    cuentas.forEach(cuenta=>{
-      const saldosCuenta = (flujoSaldo||[]).filter(r=>r.cuenta===cuenta);
-      const ultC = ultimoPeriodo(saldosCuenta);
-      if(!ultC) return;
-      const saldoIni = (saldosCuenta.find(r=>r.anio===ultC.anio && r.mes===ultC.mes) || {}).monto || 0;
-      const movs = (flujoCaja||[]).filter(r=>r.cuenta===cuenta && r.anio===ultC.anio && r.mes===ultC.mes);
-      const ing = movs.filter(r=>r.tipo==='ingreso').reduce((s,r)=>s+(r.monto||0), 0);
-      const gas = movs.filter(r=>r.tipo==='gasto').reduce((s,r)=>s+(r.monto||0), 0);
-      cajaTotal += saldoIni + ing - gas;
-      if(!cajaPeriodo || ultC.k > cajaPeriodo.k) cajaPeriodo = ultC;
+  // ---- Definiciones comunes del Panel de Control ----
+  // Costo fijo operativo = ítems de Gastos de tipo "Normal" (no omitidos/ocultos).
+  // Se dejan AFUERA: tu sueldo (tipo "Sueldo"), pagos de deuda/intereses (tipo "Interés")
+  // y los pagos de mercadería a proveedor (tipo "Compra", que ya están en Compras).
+  function iniGastosPeriodo(data, anio, mes){
+    let fijo=0, sueldo=0, deuda=0;
+    (data.presupuesto||[]).forEach(r=>{
+      if(r.anio!==anio || r.mes!==mes || presupuestoExcluida(r.categoria)) return;
+      const t = presupuestoTipoDe(r.categoria);
+      if(t==='sueldo') sueldo += (r.monto||0);
+      else if(t==='interes') deuda += (r.monto||0);
+      else if(t==='compra') return;
+      else fijo += (r.monto||0);
     });
+    return { fijo, sueldo, deuda };
+  }
+  function iniValoresPeriodo(data, anio, mes){
+    const venta = (data.ventas||[]).filter(r=>r.anio===anio&&r.mes===mes).reduce((s,r)=>s+(r.efectivo||0)+(r.credito||0),0);
+    const compra = (data.compras||[]).filter(r=>r.anio===anio&&r.mes===mes).reduce((s,r)=>s+(r.inicial||0)+(r.reposicion||0)+(r.otros||0),0);
+    const g = iniGastosPeriodo(data, anio, mes);
+    const utilidad = venta - compra - g.fijo;
+    const margen = venta ? utilidad/venta : 0;
+    return { venta, compra, gasto:g.fijo, sueldo:g.sueldo, deuda:g.deuda, utilidad, margen, utilidadNeta: utilidad - g.sueldo, tieneDatos: venta>0 };
+  }
+  function iniHoy(){ const d=new Date(); return { anio:d.getFullYear(), mes:MESES[d.getMonth()] }; }
 
-    const deudaTotal = (pasivos||[]).reduce((s,p)=>s+(p.saldo_actual||0), 0);
-
-    document.getElementById('ini-kpiRow').innerHTML = `
-      <div class="kpi accent"><div class="label">Caja disponible${cajaPeriodo?` (cierre ${capitalize(cajaPeriodo.mes)} ${cajaPeriodo.anio})`:''}${infoBadge('Es la plata que tenés hoy sumando todas tus cuentas (efectivo y bancos). Te dice si podés cubrir un gasto o una compra sin vender más ni pedir prestado.')}</div><div class="value">$ ${fmt(cajaTotal)}</div></div>
-      <div class="kpi"><div class="label">Venta ${ult?capitalize(ult.mes)+' '+ult.anio:'del mes'}${infoBadge('Total facturado en el último mes cargado (efectivo + crédito). Sirve para ver el ritmo de venta y compararlo con otros meses.')}</div><div class="value">$ ${fmt(ventaMes)}</div></div>
-      <div class="kpi ${utilidadMes>=0?'accent':''}"><div class="label">Utilidad del mes${infoBadge('Lo que queda después de pagar la mercadería y los gastos fijos del mes (venta − compras − gastos). Te dice si el mes fue rentable, antes de tu sueldo o de pagos de deuda.')}</div><div class="value">$ ${fmt(utilidadMes)}</div>${utilidadMes<0?'<div class="delta down">▼ resultado negativo</div>':''}</div>
-      <div class="kpi"><div class="label">Margen${infoBadge('La utilidad dividida la venta, en porcentaje. Te dice qué parte de cada peso vendido termina siendo ganancia — sirve para comparar la rentabilidad entre meses, más allá de cuánto vendiste.')}</div><div class="value">${fmtPct(margenMes)}</div></div>
-      <div class="kpi ${deudaTotal>0?'accent':''}"><div class="label">Deuda total${infoBadge('Suma de todo lo que debés hoy (préstamos, tarjetas, etc.). Ayuda a decidir si podés tomar más deuda o si conviene primero pagar la que ya tenés.')}</div><div class="value">$ ${fmt(deudaTotal)}</div></div>`;
-
-    // ---- punto de equilibrio del mes: selector de período ----
-    const peSel = document.getElementById('ini-peMesSelect');
-    if(peSel){
-      const periodos = iniPeriodosVCP(data); // ascendente
-      const prevValue = peSel.value;
-      peSel.innerHTML = periodos.map(p=>`<option value="${periodoKey(p.anio,p.mes)}">${capitalize(p.mes)} ${p.anio}</option>`).join('');
-      let selectedKey = periodos.some(p=>String(periodoKey(p.anio,p.mes))===prevValue) ? prevValue : (ult ? String(periodoKey(ult.anio, ult.mes)) : '');
-      if(selectedKey) peSel.value = selectedKey;
-      const selPeriodo = periodos.find(p=>String(periodoKey(p.anio,p.mes))===peSel.value);
-      renderPuntoEquilibrio(data, selPeriodo ? selPeriodo.anio : null, selPeriodo ? selPeriodo.mes : null);
-    }
+  // Caja de una cuenta al cierre de un mes: toma el último saldo inicial cargado HASTA ese mes
+  // (nunca uno de un mes futuro) y le suma/resta todos los movimientos desde ese mes hasta el
+  // mes pedido. Así no se distorsiona si hay saldos o movimientos cargados por adelantado, y
+  // tampoco si en algún mes intermedio no se cargó el saldo inicial.
+  function iniCuentas(data){
+    return Array.from(new Set([...(data.flujoSaldo||[]).map(r=>r.cuenta), ...(data.flujoCaja||[]).map(r=>r.cuenta)].filter(Boolean)));
+  }
+  function iniCajaCuentaAl(data, cuenta, anio, mes){
+    const k = periodoKey(anio, mes);
+    let base = null, baseAny = null;
+    (data.flujoSaldo||[]).forEach(r=>{
+      if(r.cuenta!==cuenta || r.anio==null || !r.mes) return;
+      const rk = periodoKey(r.anio, r.mes);
+      if(rk > k) return;
+      if(!baseAny || rk > baseAny.k) baseAny = { k:rk, monto:r.monto||0 };
+      // Un saldo inicial en 0 suele ser una celda vacía: se prefiere el último saldo real anterior
+      // y se reconstruye con los movimientos (el resultado es el mismo si la cuenta de verdad quedó en 0).
+      if((r.monto||0)!==0 && (!base || rk > base.k)) base = { k:rk, monto:r.monto||0 };
+    });
+    base = base || baseAny;
+    if(!base) return null;
+    let neto = 0;
+    (data.flujoCaja||[]).forEach(r=>{
+      if(r.cuenta!==cuenta || r.anio==null || !r.mes) return;
+      const rk = periodoKey(r.anio, r.mes);
+      if(rk < base.k || rk > k) return;
+      if(r.tipo==='ingreso') neto += (r.monto||0);
+      else if(r.tipo==='gasto') neto -= (r.monto||0);
+    });
+    return base.monto + neto;
+  }
+  function iniCajaTotalAl(data, anio, mes){
+    let total = 0, alguna = false;
+    const detalle = [];
+    iniCuentas(data).forEach(c=>{
+      const v = iniCajaCuentaAl(data, c, anio, mes);
+      if(v===null) return;
+      alguna = true; total += v; detalle.push({ cuenta:c, monto:v });
+    });
+    return alguna ? { total, detalle } : null;
   }
 
-  function renderPuntoEquilibrio(data, anio, mes){
+  function renderInicio(data){
+    if(!document.getElementById('ini-kpiRow')) return;
+    const hoy = iniHoy();
+    const kHoy = periodoKey(hoy.anio, hoy.mes);
+
+    // ---- selector de mes/año de las tarjetas (por defecto: último mes con ventas cargadas) ----
+    const anios = iniAniosConVentas(data);
+    if(!state.iniAnio || !anios.includes(state.iniAnio)){
+      const ult = ultimoPeriodo((data.ventas||[]).filter(r=>r.anio!=null && r.mes && periodoKey(r.anio,r.mes)<=kHoy && ((r.efectivo||0)+(r.credito||0))>0));
+      state.iniAnio = ult ? ult.anio : hoy.anio;
+      state.iniMes = ult ? ult.mes : hoy.mes;
+    }
+    const anioSel = document.getElementById('ini-anioSelect');
+    if(anioSel) anioSel.innerHTML = anios.slice().reverse().map(a=>`<option value="${a}" ${a===state.iniAnio?'selected':''}>${a}</option>`).join('');
+    iniFillMesesTarjetas(data);
+
+    renderInicioKpis(data);
+    iniInitPuntoEquilibrio(data);
+    iniInitHistoricoAnios(data);
+  }
+  function iniFillMesesTarjetas(data){
+    const mesSel = document.getElementById('ini-mesSelect');
+    const meses = iniMesesConVenta(data, state.iniAnio);
+    if(!state.iniMes || !meses.includes(state.iniMes)) state.iniMes = meses.length ? meses[meses.length-1] : null;
+    if(mesSel) mesSel.innerHTML = meses.map(m=>`<option value="${m}" ${m===state.iniMes?'selected':''}>${capitalize(m)}</option>`).join('');
+  }
+
+  function renderInicioKpis(data){
+    data = data || state.iniData;
+    if(!data) return;
+    const hoy = iniHoy();
+    const anio = state.iniAnio, mes = state.iniMes;
+    const v = mes ? iniValoresPeriodo(data, anio, mes) : { venta:0, utilidad:0, margen:0, utilidadNeta:0 };
+    const esMesActual = mes && anio===hoy.anio && mes===hoy.mes;
+    // Caja: si el mes elegido es el actual, es la caja "a hoy"; si es otro mes, la caja al cierre de ese mes.
+    // La caja SIEMPRE es la de hoy (foto del momento), sin importar el mes elegido: incluye todo lo
+    // cargado hasta el mes actual y nada de meses futuros. El cierre de meses anteriores se ve en el Histórico.
+    const caja = iniCajaTotalAl(data, hoy.anio, hoy.mes);
+    const mesLbl = mes ? `${capitalize(mes)} ${anio}` : 'del mes';
+    const cajaLbl = 'Caja disponible hoy';
+
+    document.getElementById('ini-kpiRow').innerHTML = `
+      <div class="kpi accent"><div class="label">${cajaLbl}${infoBadge('La plata que tenés hoy sumando todas tus cuentas, incluido lo que ya cargaste del mes en curso. No cambia con el mes elegido arriba. Para ver cómo cerró la caja en meses anteriores, mirá el gráfico Histórico → Caja disponible. Es el mismo número que "Saldo a hoy" en Flujo de Caja.')}</div><div class="value">${caja?'$ '+fmt(caja.total):'—'}</div><div class="kpi-sub" aria-hidden="true" style="visibility:hidden;">&nbsp;</div></div>
+      <div class="kpi"><div class="label">Venta ${mesLbl}${infoBadge('Total vendido en el mes (efectivo + crédito).')}</div><div class="value">$ ${fmt(v.venta)}</div>${esMesActual?'<div class="kpi-sub">Mes en curso, todavía no cerró</div>':'<div class="kpi-sub" aria-hidden="true" style="visibility:hidden;">&nbsp;</div>'}</div>
+      <div class="kpi ${v.utilidad>=0?'accent':''}"><div class="label">Utilidad ${mesLbl}${infoBadge('Venta − compras de mercadería − costo fijo del negocio. NO descuenta tu sueldo ni los pagos de deuda: muestra lo que genera el negocio en sí. Abajo ves cuánto queda después de tu sueldo.')}</div><div class="value">$ ${fmt(v.utilidad)}</div><div class="kpi-sub">Después de tu sueldo: <span class="m" style="color:${v.utilidadNeta>=0?'var(--good)':'var(--bad)'};">$ ${fmt(v.utilidadNeta)}</span></div></div>
+      <div class="kpi"><div class="label">Margen ${mesLbl}${infoBadge('Utilidad ÷ venta. De cada $100 vendidos, cuántos quedan como ganancia del negocio (antes de tu sueldo y deudas). Sirve para comparar meses aunque hayas vendido distinto.')}</div><div class="value" style="color:${v.margen>=0?'':'var(--bad)'};">${fmtPct(v.margen)}</div><div class="kpi-sub">De cada $100 vendidos quedan $${Math.round(v.margen*100)}</div></div>`;
+  }
+
+  // ---------- PUNTO DE EQUILIBRIO (mensual o anual, sin sueldo ni deuda) ----------
+  function iniAniosConVentas(data){
+    return Array.from(new Set((data.ventas||[]).filter(r=>((r.efectivo||0)+(r.credito||0))>0).map(r=>r.anio))).filter(a=>a!=null).sort((a,b)=>a-b);
+  }
+  function iniMesesConVenta(data, anio){
+    const kHoy = periodoKey(iniHoy().anio, iniHoy().mes);
+    return MESES.filter(m=>periodoKey(anio,m)<=kHoy && iniValoresPeriodo(data, anio, m).venta>0);
+  }
+  function iniInitPuntoEquilibrio(data){
+    const anioSel = document.getElementById('ini-peAnioSelect');
+    const mesSel = document.getElementById('ini-peMesSelect');
+    if(!anioSel || !mesSel) return;
+    const anios = iniAniosConVentas(data);
+    if(!state.iniPeAnio || !anios.includes(state.iniPeAnio)) state.iniPeAnio = anios.length ? anios[anios.length-1] : iniHoy().anio;
+    anioSel.innerHTML = anios.slice().reverse().map(a=>`<option value="${a}" ${a===state.iniPeAnio?'selected':''}>${a}</option>`).join('');
+    iniFillPeMeses(data);
+    renderPuntoEquilibrio(data);
+  }
+  function iniFillPeMeses(data){
+    const mesSel = document.getElementById('ini-peMesSelect');
+    const meses = iniMesesConVenta(data, state.iniPeAnio);
+    if(!state.iniPeMes || !meses.includes(state.iniPeMes)) state.iniPeMes = meses.length ? meses[meses.length-1] : null;
+    mesSel.innerHTML = meses.map(m=>`<option value="${m}" ${m===state.iniPeMes?'selected':''}>${capitalize(m)}</option>`).join('');
+  }
+
+  function renderPuntoEquilibrio(data){
     const peKpisEl = document.getElementById('ini-peKpis');
+    const peBarEl = document.getElementById('ini-peBar');
     if(!peKpisEl) return;
-    if(anio==null || !mes){
-      peKpisEl.innerHTML = `<div class="kpi"><div class="label">Punto de equilibrio</div><div class="value" style="font-size:12.5px;line-height:1.3;white-space:normal;">Todavía no hay datos de ventas, compras y gastos cargados para calcularlo</div></div>`;
+    data = data || state.iniData;
+    const vista = state.iniPeVista || 'mensual';
+    const anio = state.iniPeAnio;
+    document.getElementById('ini-peMesWrap').style.display = vista==='mensual' ? '' : 'none';
+    const mesesAnio = anio ? iniMesesConVenta(data, anio) : [];
+    if(!data || !anio || !mesesAnio.length || (vista==='mensual' && !state.iniPeMes)){
+      peKpisEl.innerHTML = `<div class="kpi"><div class="label">Punto de equilibrio</div><div class="value" style="font-size:12.5px;line-height:1.3;white-space:normal;">Todavía no hay ventas, compras y gastos cargados para calcularlo</div></div>`;
+      if(peBarEl) peBarEl.innerHTML = '';
       return;
     }
-    const { ventas, compras, presupuesto } = data;
-    const ventaMes = (ventas||[]).filter(r=>r.anio===anio && r.mes===mes).reduce((s,r)=>s+(r.efectivo||0)+(r.credito||0), 0);
-    const compraMes = (compras||[]).filter(r=>r.anio===anio && r.mes===mes).reduce((s,r)=>s+(r.inicial||0)+(r.reposicion||0)+(r.otros||0), 0);
-    const presupuestoMes = (presupuesto||[]).filter(r=>r.anio===anio && r.mes===mes).reduce((s,r)=>s+(r.monto||0), 0);
-    // Margen bruto = (venta - costo de mercadería) / venta. Punto de equilibrio ($) = gastos fijos / margen bruto.
-    const margenBruto = ventaMes ? (ventaMes - compraMes) / ventaMes : 0;
-    const puntoEquilibrio = margenBruto > 0 ? presupuestoMes / margenBruto : null;
-    const cubierto = puntoEquilibrio !== null && ventaMes >= puntoEquilibrio;
+    const sumar = meses => meses.reduce((acc,m)=>{ const x=iniValoresPeriodo(data, anio, m); acc.venta+=x.venta; acc.compra+=x.compra; acc.fijo+=x.gasto; return acc; }, {venta:0, compra:0, fijo:0});
+    // El margen bruto se toma del año (meses con venta cargada), no de un solo mes: las compras
+    // llegan en pedidos grandes (pedido inicial) y un mes suelto puede dar un margen engañoso.
+    const tAnio = sumar(mesesAnio);
+    const margenBruto = tAnio.venta ? (tAnio.venta - tAnio.compra)/tAnio.venta : 0;
+    const t = vista==='mensual' ? sumar([state.iniPeMes]) : tAnio;
+    const pe = margenBruto > 0 ? t.fijo / margenBruto : null;
+    const cubierto = pe!==null && t.venta >= pe;
+    const anioCompleto = mesesAnio.length===12;
+    const periodoLbl = vista==='mensual'
+      ? `${capitalize(state.iniPeMes)} ${anio}`
+      : (anioCompleto ? `año ${anio}` : `${capitalize(mesesAnio[0])}–${capitalize(mesesAnio[mesesAnio.length-1])} ${anio}`);
+    const subAnual = vista==='anual' && pe!==null ? `<div class="kpi-sub">Equivale a <span class="m">$ ${fmt(pe/mesesAnio.length)}</span> por mes${anioCompleto?'':' (a la fecha)'}</div>` : '';
+
     peKpisEl.innerHTML = `
-      <div class="kpi"><div class="label">Gastos fijos de ${capitalize(mes)} ${anio}${infoBadge('Lo que gastás todos los meses sí o sí (alquiler, sueldos, servicios), sin importar cuánto vendas.')}</div><div class="value">$ ${fmt(presupuestoMes)}</div></div>
-      <div class="kpi"><div class="label">Margen bruto (venta − mercadería)${infoBadge('Lo que queda de cada venta después de pagar solo la mercadería, sin contar los gastos fijos. Cuanto más alto, menos necesitás vender para cubrir tus costos.')}</div><div class="value">${fmtPct(margenBruto)}</div></div>
-      <div class="kpi"><div class="label">Punto de equilibrio (venta necesaria)${infoBadge('Cuánto necesitás vender ese mes para cubrir tus gastos fijos, ni ganar ni perder. Sirve como meta mínima de venta del mes.')}</div><div class="value">${puntoEquilibrio!==null ? '$ '+fmt(puntoEquilibrio) : '—'}</div></div>
-      <div class="kpi ${cubierto?'accent':''}"><div class="label">Lectura${infoBadge('Te dice, en una frase, si ya llegaste a esa meta mínima de venta o cuánto te falta para llegar.')}</div><div class="value" style="font-size:12.5px;line-height:1.3;white-space:normal;">${
-        puntoEquilibrio===null ? 'Sin margen bruto positivo ese mes — no se puede calcular' :
-        cubierto ? 'Ya cubriste los costos fijos de ese mes' : `Faltaron $ ${fmt(puntoEquilibrio-ventaMes)} en ventas para cubrir los costos fijos de ese mes`
+      <div class="kpi"><div class="label">Costo fijo ${periodoLbl}${infoBadge('Gastos de tipo "Normal": alquiler, sueldos de funcionarios, BPS/DGI, servicios, etc. No incluye tu sueldo, ni pagos de deuda/intereses, ni pagos de mercadería.')}</div><div class="value">$ ${fmt(t.fijo)}</div></div>
+      <div class="kpi"><div class="label">Margen bruto ${anio}${infoBadge('De cada $100 vendidos, cuánto queda después de pagar la mercadería. Se calcula con todo el año (meses con venta cargada) porque las compras llegan en pedidos grandes y un mes suelto engaña.')}</div><div class="value">${fmtPct(margenBruto)}</div></div>
+      <div class="kpi accent"><div class="label">Punto de equilibrio ${periodoLbl}${infoBadge('La venta mínima para cubrir el costo fijo: costo fijo ÷ margen bruto. Vendiendo eso no ganás ni perdés (antes de tu sueldo y deudas).')}</div><div class="value">${pe!==null ? '$ '+fmt(pe) : '—'}</div>${subAnual}</div>
+      <div class="kpi"><div class="label">Venta real ${periodoLbl}</div><div class="value">$ ${fmt(t.venta)}</div></div>
+      <div class="kpi ${cubierto?'accent':''}"><div class="label">Lectura</div><div class="value" style="font-size:12.5px;line-height:1.35;white-space:normal;">${
+        pe===null ? 'Sin margen bruto positivo — no se puede calcular' :
+        cubierto ? `Cubriste el costo fijo y sobraron <span class="m">$ ${fmt(t.venta-pe)}</span>` : `Faltan <span class="m">$ ${fmt(pe-t.venta)}</span> de venta para cubrir el costo fijo`
       }</div></div>`;
+
+    if(peBarEl){
+      if(pe===null || pe<=0){ peBarEl.innerHTML=''; return; }
+      const pct = t.venta/pe;
+      peBarEl.innerHTML = `<div class="pe-bar-wrap">
+        <div class="pe-bar-tit"><span>Venta real vs. punto de equilibrio</span><b style="color:${cubierto?'var(--good)':'var(--bad)'};">${Math.round(pct*100)}% cubierto</b></div>
+        <div class="pe-bar"><div style="width:${Math.min(100,pct*100).toFixed(1)}%;background:${cubierto?'var(--good)':'var(--bad)'};"></div></div>
+      </div>`;
+    }
   }
 
   // ---------- HISTÓRICO del Panel de Control (mensual/anual, por indicador) ----------
@@ -1791,36 +2011,6 @@
     });
     return Array.from(set.values()).sort((a,b)=>periodoKey(a.anio,a.mes)-periodoKey(b.anio,b.mes));
   }
-  function iniValoresPeriodo(data, anio, mes){
-    const venta = (data.ventas||[]).filter(r=>r.anio===anio&&r.mes===mes).reduce((s,r)=>s+(r.efectivo||0)+(r.credito||0),0);
-    const compra = (data.compras||[]).filter(r=>r.anio===anio&&r.mes===mes).reduce((s,r)=>s+(r.inicial||0)+(r.reposicion||0)+(r.otros||0),0);
-    const gasto = (data.presupuesto||[]).filter(r=>r.anio===anio&&r.mes===mes&&!presupuestoExcluida(r.categoria)).reduce((s,r)=>s+(r.monto||0),0);
-    const utilidad = venta - compra - gasto;
-    const margen = venta ? utilidad/venta : 0;
-    return { venta, compra, gasto, utilidad, margen };
-  }
-  function iniPeriodosCaja(data){
-    const set = new Map();
-    (data.flujoSaldo||[]).forEach(r=>{
-      if(r.anio==null || !r.mes) return;
-      const key = periodoKey(r.anio, r.mes);
-      if(!set.has(key)) set.set(key, {anio:r.anio, mes:r.mes});
-    });
-    return Array.from(set.values()).sort((a,b)=>periodoKey(a.anio,a.mes)-periodoKey(b.anio,b.mes));
-  }
-  function iniCajaPeriodo(data, anio, mes){
-    const cuentas = Array.from(new Set((data.flujoSaldo||[]).filter(r=>r.anio===anio&&r.mes===mes).map(r=>r.cuenta)));
-    let total = 0;
-    cuentas.forEach(cuenta=>{
-      const saldoIni = (data.flujoSaldo||[]).find(r=>r.cuenta===cuenta&&r.anio===anio&&r.mes===mes);
-      if(!saldoIni) return;
-      const movs = (data.flujoCaja||[]).filter(r=>r.cuenta===cuenta&&r.anio===anio&&r.mes===mes);
-      const ing = movs.filter(r=>r.tipo==='ingreso').reduce((s,r)=>s+(r.monto||0),0);
-      const gas = movs.filter(r=>r.tipo==='gasto').reduce((s,r)=>s+(r.monto||0),0);
-      total += (saldoIni.monto||0) + ing - gas;
-    });
-    return total;
-  }
   function iniPeriodosDeuda(data){
     const set = new Map();
     (data.pasivosHistorial||[]).forEach(r=>{
@@ -1841,82 +2031,102 @@
     return total;
   }
 
+  // ---------- HISTÓRICO del Panel de Control (Chart.js, mismo estilo que la pestaña Gráficos) ----------
+  function iniInitHistoricoAnios(data){
+    const sel = document.getElementById('ini-histAnioSelect');
+    if(!sel) return;
+    const anios = Array.from(new Set([...iniAniosConVentas(data), ...(data.flujoSaldo||[]).map(r=>r.anio)].filter(a=>a!=null && a<=iniHoy().anio))).sort((a,b)=>a-b);
+    if(!state.iniHistAnio || !anios.includes(state.iniHistAnio)) state.iniHistAnio = anios.length ? anios[anios.length-1] : iniHoy().anio;
+    sel.innerHTML = anios.slice().reverse().map(a=>`<option value="${a}" ${a===state.iniHistAnio?'selected':''}>${a}</option>`).join('');
+  }
+
+  // Valor de un indicador en un mes (null = sin datos, así la barra no aparece como un 0 falso)
+  function iniHistValorMes(data, ind, anio, mes){
+    const kHoy = periodoKey(iniHoy().anio, iniHoy().mes);
+    if(periodoKey(anio, mes) > kHoy) return null;
+    if(ind==='caja'){ const c = iniCajaTotalAl(data, anio, mes); return c ? c.total : null; }
+    const v = iniValoresPeriodo(data, anio, mes);
+    if(!v.tieneDatos) return null;
+    return ind==='venta' ? v.venta : ind==='utilidad' ? v.utilidad : v.margen;
+  }
+  function iniHistValorAnio(data, ind, anio){
+    const kHoy = periodoKey(iniHoy().anio, iniHoy().mes);
+    const meses = MESES.filter(m=>periodoKey(anio,m)<=kHoy);
+    if(!meses.length) return null;
+    if(ind==='caja'){
+      const c = iniCajaTotalAl(data, anio, meses[meses.length-1]);
+      return c ? c.total : null;
+    }
+    let venta=0, utilidad=0, alguno=false;
+    meses.forEach(m=>{ const v=iniValoresPeriodo(data, anio, m); if(!v.tieneDatos) return; alguno=true; venta+=v.venta; utilidad+=v.utilidad; });
+    if(!alguno) return null;
+    return ind==='venta' ? venta : ind==='utilidad' ? utilidad : (venta ? utilidad/venta : 0);
+  }
+
   function renderHistorico(){
-    const chartEl = document.getElementById('ini-histChart');
-    if(!chartEl) return;
+    const canvas = document.getElementById('ini-histCanvas');
+    if(!canvas || typeof Chart === 'undefined') return;
     const hintEl = document.getElementById('ini-histHint');
+    const subEl = document.getElementById('ini-histSub');
+    const legendEl = document.getElementById('ini-histLegend');
     const data = state.iniData;
-    if(!data){ chartEl.innerHTML=''; if(hintEl) hintEl.textContent=''; return; }
+    grDestroy('ini-histCanvas');
+    if(!data){ if(hintEl) hintEl.textContent=''; return; }
 
     const ind = state.iniHistIndicador || 'caja';
     const vista = state.iniHistVista || 'mensual';
+    const anio = state.iniHistAnio || iniHoy().anio;
+    const esPct = ind==='margen';
+    const fmtV = v => esPct ? fmtPct(v) : (grHidden() ? '•••' : ((v<0?'-':'')+'$ '+fmt(Math.abs(v))));
+    const tick = v => esPct ? Math.round(v*100)+'%' : (grHidden() ? '•••' : ((v<0?'-':'')+'$'+fmt(Math.abs(v))));
+    const nombres = { caja:'Caja disponible', venta:'Venta', utilidad:'Utilidad', margen:'Margen' };
 
-    let periodos, calc, esPct=false, esSnapshot=false;
-    if(ind==='caja'){
-      periodos = iniPeriodosCaja(data); calc = (a,m)=>iniCajaPeriodo(data,a,m); esSnapshot=true;
-    } else if(ind==='venta'){
-      periodos = iniPeriodosVCP(data); calc = (a,m)=>iniValoresPeriodo(data,a,m).venta;
-    } else if(ind==='utilidad'){
-      periodos = iniPeriodosVCP(data); calc = (a,m)=>iniValoresPeriodo(data,a,m).utilidad;
-    } else if(ind==='margen'){
-      periodos = iniPeriodosVCP(data); calc = (a,m)=>iniValoresPeriodo(data,a,m).margen; esPct=true;
-    } else {
-      periodos = iniPeriodosDeuda(data); calc = (a,m)=>iniDeudaPeriodo(data,a,m); esSnapshot=true;
-    }
-
-    if(!periodos.length){
-      chartEl.innerHTML = '';
-      if(hintEl) hintEl.textContent = ind==='deuda'
-        ? 'No hay histórico de pagos de pasivos cargado todavía (tabla pasivos_historial).'
-        : 'No hay datos históricos cargados todavía para este indicador.';
-      return;
-    }
-
-    function barHtml(label, valor, width){
-      const color = valor<0 ? 'var(--bad)' : 'var(--accent)';
-      const titulo = `${label}: ${esPct?fmtPct(valor):'$ '+fmt(valor)}`;
-      return `<div class="bar-col" style="flex-direction:column;">
-        <div style="display:flex;align-items:flex-end;height:130px;"><div class="bar-seg" style="height:${'{{H}}'}px;width:${width}px;background:${color};" title="${escapeHtml(titulo)}"></div></div>
-        <div class="bar-label">${label}</div>
-      </div>`;
-    }
-
+    let labels, datasets;
     if(vista==='mensual'){
-      const serie = periodos.map(p=>({ label: `${MESES_CORTO[MESES.indexOf(p.mes)]} ${String(p.anio).slice(-2)}`, valor: calc(p.anio,p.mes) }));
-      const max = Math.max(1, ...serie.map(s=>Math.abs(s.valor)));
-      chartEl.innerHTML = serie.map(s=>{
-        const h = Math.max(2, Math.abs(s.valor)/max*130);
-        return barHtml(s.label, s.valor, 20).replace('{{H}}', h);
-      }).join('');
-      if(hintEl) hintEl.textContent = ind==='deuda'
-        ? 'Deuda total por mes: suma del saldo registrado en pasivos_historial en los meses con movimientos cargados (puede no incluir pasivos sin movimiento ese mes).'
-        : 'Cada barra es un mes con datos cargados.';
+      const actual = MESES.map(m=>iniHistValorMes(data, ind, anio, m));
+      const anterior = MESES.map(m=>iniHistValorMes(data, ind, anio-1, m));
+      labels = MESES_CORTO;
+      const colorActual = actual.map(v=>(v!=null && v<0) ? GR_COLORS.red : GR_COLORS.teal);
+      datasets = [
+        { label:String(anio), data:actual, backgroundColor:colorActual, borderRadius:3, maxBarThickness:14 },
+        { label:String(anio-1), data:anterior, backgroundColor:GR_COLORS.grayDim, borderRadius:3, maxBarThickness:14 }
+      ];
+      legendEl.innerHTML = `<span><i style="background:${GR_COLORS.teal};"></i>${anio}</span><span><i style="background:${GR_COLORS.grayDim};"></i>${anio-1}</span>${(ind==='utilidad'||ind==='margen')?`<span><i style="background:${GR_COLORS.red};"></i>${anio} negativo</span>`:''}`;
+      subEl.textContent = `${nombres[ind]} mes a mes: ${anio} contra ${anio-1}`;
     } else {
-      const anios = Array.from(new Set(periodos.map(p=>p.anio))).sort((a,b)=>a-b);
-      const serie = anios.map(anio=>{
-        const periodosAnio = periodos.filter(p=>p.anio===anio).sort((a,b)=>MESES.indexOf(a.mes)-MESES.indexOf(b.mes));
-        let valor;
-        if(esSnapshot){
-          const ultimo = periodosAnio[periodosAnio.length-1];
-          valor = calc(ultimo.anio, ultimo.mes);
-        } else if(ind==='margen'){
-          const ventaAnual = periodosAnio.reduce((s,p)=>s+iniValoresPeriodo(data,p.anio,p.mes).venta,0);
-          const utilidadAnual = periodosAnio.reduce((s,p)=>s+iniValoresPeriodo(data,p.anio,p.mes).utilidad,0);
-          valor = ventaAnual ? utilidadAnual/ventaAnual : 0;
-        } else {
-          valor = periodosAnio.reduce((s,p)=>s+calc(p.anio,p.mes),0);
-        }
-        return { label: String(anio), valor };
-      });
-      const max = Math.max(1, ...serie.map(s=>Math.abs(s.valor)));
-      chartEl.innerHTML = serie.map(s=>{
-        const h = Math.max(2, Math.abs(s.valor)/max*130);
-        return barHtml(s.label, s.valor, 34).replace('{{H}}', h);
-      }).join('');
-      if(hintEl) hintEl.textContent = esSnapshot
-        ? (ind==='deuda' ? 'Deuda total por año: saldo del último mes con movimientos registrados en pasivos_historial dentro de ese año.' : 'Valor de cierre del último mes con datos cargados en el año.')
-        : (ind==='margen' ? 'Margen anual: utilidad del año ÷ venta del año.' : 'Suma de los meses con datos cargados en el año.');
+      const anios = Array.from(new Set([...iniAniosConVentas(data), ...(data.flujoSaldo||[]).map(r=>r.anio)].filter(a=>a!=null && a<=iniHoy().anio))).sort((a,b)=>a-b);
+      const valores = anios.map(a=>iniHistValorAnio(data, ind, a));
+      labels = anios.map(String);
+      datasets = [{ label:nombres[ind], data:valores,
+        backgroundColor: anios.map((a,i)=> (valores[i]!=null && valores[i]<0) ? GR_COLORS.red : (a===anio ? GR_COLORS.teal : GR_COLORS.grayDim)),
+        borderRadius:4, maxBarThickness:30 }];
+      legendEl.innerHTML = `<span><i style="background:${GR_COLORS.teal};"></i>${anio} (año elegido)</span><span><i style="background:${GR_COLORS.grayDim};"></i>Otros años</span>`;
+      subEl.textContent = `${nombres[ind]} por año · ${anio} resaltado`;
     }
+
+    const hayDatos = datasets.some(d=>d.data.some(v=>v!=null));
+    grCharts['ini-histCanvas'] = new Chart(canvas, {
+      type:'bar',
+      data:{ labels, datasets },
+      options: grBaseOpts({
+        plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:(ctx)=> ctx.parsed.y==null ? ' Sin datos' : ` ${ctx.dataset.label}: ${fmtV(ctx.parsed.y)}` } } },
+        scales:{
+          x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} },
+          y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:tick} }
+        }
+      })
+    });
+
+    const actualTxt = anio===iniHoy().anio ? ` ${anio} va hasta ${capitalize(iniHoy().mes)}.` : '';
+    const def = {
+      caja: vista==='mensual' ? 'Caja al cierre de cada mes, sumando todas las cuentas.' : 'Caja al cierre de cada año (el año en curso, a hoy).',
+      venta: vista==='mensual' ? 'Venta total de cada mes (efectivo + crédito).' : 'Venta total del año.',
+      utilidad: 'Venta − compras − costo fijo, sin tu sueldo ni pagos de deuda.',
+      margen: 'Utilidad ÷ venta, sin tu sueldo ni pagos de deuda.'
+    }[ind];
+    if(hintEl) hintEl.textContent = hayDatos ? def + actualTxt : 'No hay datos cargados para este indicador en el período elegido.';
+    const anioSel = document.getElementById('ini-histAnioSelect');
+    if(anioSel) anioSel.title = vista==='anual' ? 'Año a resaltar' : 'Año a mostrar';
   }
 
   // ---------- COMPARATIVO (Ventas / Compras / Gastos vs. otro año, mismo mes) ----------
@@ -2022,9 +2232,7 @@
 
   // ---------- VENTAS ----------
   async function loadVentas(){
-    let q = sb.from('ventas').select('*');
-    if(state.activeYear !== 'TODOS') q = q.eq('anio', state.activeYear);
-    const { data, error } = await q;
+    const { data, error } = await sbAll(()=>{ let q = sb.from('ventas').select('*').order('id'); if(state.activeYear !== 'TODOS') q = q.eq('anio', state.activeYear); return q; });
     if(error){ showToast('Error cargando ventas: '+error.message, true); return; }
     state.ventasRows = data || [];
     renderVentas();
@@ -2147,8 +2355,7 @@
 
   // ---------- COMPRAS ----------
   async function loadCompras(){
-    let q = sb.from('compras').select('*');
-    if(state.activeYear !== 'TODOS') q = q.eq('anio', state.activeYear);
+    const q = sbAll(()=>{ let x = sb.from('compras').select('*').order('id'); if(state.activeYear !== 'TODOS') x = x.eq('anio', state.activeYear); return x; });
     const facturasQ = state.activeYear === 'TODOS'
       ? Promise.resolve({ data: [], error: null })
       : sb.from('compras_facturas').select('*').eq('anio', state.activeYear).order('fecha');
@@ -2302,7 +2509,6 @@
       <div class="kpi"><div class="label">IVA</div><div class="value">$ ${fmt(ivaCompra)}</div></div>
       <div class="kpi"><div class="label">Pedido inicial</div><div class="value">$ ${fmt(inicialTot)}</div></div>
       <div class="kpi"><div class="label">Reposición</div><div class="value">$ ${fmt(reposicionTot)}</div></div>
-      <div class="kpi"><div class="label">Otros</div><div class="value">$ ${fmt(otrosTot)}</div></div>
       <div class="kpi"><div class="label">Promedio reposición</div><div class="value">$ ${fmt(reposicionTot/12)}</div></div>`;
     document.querySelector('#panel-compras > .banner')?.remove();
     renderComprasChart();
@@ -2426,8 +2632,7 @@
 
   // ---------- PRESUPUESTO (gastos fijos: ítem × mes) ----------
   async function loadPresupuesto(){
-    let q = sb.from('presupuesto').select('*');
-    if(state.activeYear !== 'TODOS') q = q.eq('anio', state.activeYear);
+    const q = sbAll(()=>{ let x = sb.from('presupuesto').select('*').order('id'); if(state.activeYear !== 'TODOS') x = x.eq('anio', state.activeYear); return x; });
     const ordenQ = sb.from('item_orden').select('categoria,orden').eq('contexto','presupuesto').eq('cuenta','');
     const opQ = sb.from('flujo_gasto_operativo').select('categoria');
     const tipoQ = sb.from('presupuesto_tipo').select('categoria,tipo');
@@ -3054,8 +3259,8 @@
 
   async function loadFlujoCuentas(){
     const [a,b,ordenRes] = await Promise.all([
-      sb.from('flujo_caja').select('cuenta'),
-      sb.from('flujo_saldo_inicial').select('cuenta'),
+      sbAll(()=>sb.from('flujo_caja').select('cuenta').order('id')),
+      sbAll(()=>sb.from('flujo_saldo_inicial').select('cuenta').order('id')),
       sb.from('item_orden').select('categoria,orden').eq('contexto','flujo_cuentas').eq('cuenta',''),
     ]);
     if(a.error){ showToast('Error cargando cuentas: '+a.error.message, true); }
@@ -3130,28 +3335,21 @@
   // Se calcula siempre sobre el año calendario real (no sobre el año que esté eligiendo el
   // usuario arriba), y por eso mira directamente la base en vez de depender de state.flujoRows.
   async function cargarSaldoAHoy(cuenta){
+    // Misma cuenta que "Caja disponible a hoy" del Panel de Control (iniCajaCuentaAl): último
+    // saldo inicial cargado hasta el mes actual + todos los movimientos desde ese mes hasta hoy.
     if(!cuenta){ state.flujoSaldoHoy = null; return; }
-    const hoy = new Date();
-    const anioHoy = hoy.getFullYear();
-    const mesHoyIdx = hoy.getMonth();
+    const hoy = iniHoy();
     const [sRes, cRes] = await Promise.all([
-      sb.from('flujo_saldo_inicial').select('mes,monto').eq('cuenta', cuenta).eq('anio', anioHoy),
-      sb.from('flujo_caja').select('tipo,mes,monto').eq('cuenta', cuenta).eq('anio', anioHoy),
+      sbAll(()=>sb.from('flujo_saldo_inicial').select('cuenta,anio,mes,monto').eq('cuenta', cuenta).order('id')),
+      sbAll(()=>sb.from('flujo_caja').select('cuenta,anio,tipo,mes,monto').eq('cuenta', cuenta).order('id')),
     ]);
     if(sRes.error || cRes.error){ state.flujoSaldoHoy = null; return; }
-    const saldos = sRes.data || [];
-    const movs = cRes.data || [];
-    let idx = mesHoyIdx, fila = null;
-    while(idx >= 0){
-      fila = saldos.find(r=>r.mes===MESES[idx]);
-      if(fila) break;
-      idx--;
-    }
-    if(!fila){ state.flujoSaldoHoy = null; return; }
-    const mesRef = MESES[idx];
-    const ing = movs.filter(r=>r.tipo==='ingreso' && r.mes===mesRef).reduce((s,r)=>s+(r.monto||0),0);
-    const gas = movs.filter(r=>r.tipo==='gasto' && r.mes===mesRef).reduce((s,r)=>s+(r.monto||0),0);
-    state.flujoSaldoHoy = { monto: (fila.monto||0) + ing - gas, mes: mesRef, anio: anioHoy, esMesActual: idx===mesHoyIdx };
+    const d = { flujoSaldo: sRes.data||[], flujoCaja: cRes.data||[] };
+    const monto = iniCajaCuentaAl(d, cuenta, hoy.anio, hoy.mes);
+    if(monto===null){ state.flujoSaldoHoy = null; return; }
+    const kHoy = periodoKey(hoy.anio, hoy.mes);
+    const ult = ultimoPeriodo([...d.flujoSaldo, ...d.flujoCaja].filter(r=>r.anio!=null && r.mes && periodoKey(r.anio,r.mes)<=kHoy));
+    state.flujoSaldoHoy = { monto, mes: ult ? ult.mes : hoy.mes, anio: ult ? ult.anio : hoy.anio, esMesActual: !!ult && ult.k===kHoy };
   }
 
   async function loadFlujoData(){
@@ -3165,9 +3363,8 @@
     }
     document.getElementById('flu-sinCuenta').style.display = 'none';
     flujoCuentaActions.style.display = 'block';
-    let qa = sb.from('flujo_caja').select('*').eq('cuenta', state.flujoActiveCuenta);
-    let qb = sb.from('flujo_saldo_inicial').select('*').eq('cuenta', state.flujoActiveCuenta);
-    if(state.activeYear !== 'TODOS'){ qa = qa.eq('anio', state.activeYear); qb = qb.eq('anio', state.activeYear); }
+    const qa = sbAll(()=>{ let x = sb.from('flujo_caja').select('*').eq('cuenta', state.flujoActiveCuenta).order('id'); if(state.activeYear !== 'TODOS') x = x.eq('anio', state.activeYear); return x; });
+    const qb = sbAll(()=>{ let x = sb.from('flujo_saldo_inicial').select('*').eq('cuenta', state.flujoActiveCuenta).order('id'); if(state.activeYear !== 'TODOS') x = x.eq('anio', state.activeYear); return x; });
     const qOrdenIng = sb.from('item_orden').select('categoria,orden').eq('contexto','flujo_ingreso').eq('cuenta', state.flujoActiveCuenta);
     const qOrdenGas = sb.from('item_orden').select('categoria,orden').eq('contexto','flujo_gasto').eq('cuenta', state.flujoActiveCuenta);
     const qOp = sb.from('flujo_gasto_operativo').select('categoria');
@@ -3634,7 +3831,7 @@
 
   // ---------- PANEL DE PASIVOS (resumen general de todos los pasivos + evolución) ----------
   async function loadPasivosResumen(){
-    const { data, error } = await sb.from('pasivos_historial').select('*');
+    const { data, error } = await sbAll(()=>sb.from('pasivos_historial').select('*').order('id'));
     if(error){ showToast('Error cargando historial de pasivos: '+error.message, true); return; }
     state.pasivosHistorialTodos = data || [];
     renderPasivosResumen();
@@ -4434,9 +4631,9 @@
     initYearSelect('gr-yearSelect');
 
     const [{ data: ventasTodas, error: e1 }, { data: comprasTodas, error: e2 }, { data: presTodas, error: e3 }] = await Promise.all([
-      sb.from('ventas').select('anio,mes,efectivo,credito'),
-      sb.from('compras').select('anio,mes,inicial,reposicion,otros'),
-      sb.from('presupuesto').select('anio,mes,categoria,monto')
+      sbAll(()=>sb.from('ventas').select('anio,mes,efectivo,credito').order('id')),
+      sbAll(()=>sb.from('compras').select('anio,mes,inicial,reposicion,otros').order('id')),
+      sbAll(()=>sb.from('presupuesto').select('anio,mes,categoria,monto').order('id'))
     ]);
     if(e1 || e2 || e3){ showToast('Error cargando gráficos: '+((e1||e2||e3).message), true); return; }
     const esTodos = state.activeYear === 'TODOS';
@@ -4581,24 +4778,61 @@
   }
 
   // ---------- PRESUPUESTO ANUAL (proyección desde un año de referencia + % de ajuste) ----------
-  function paInitYearSelects(){
+  // La configuración del presupuesto de cada año (año base, % de ajuste y si está fijado) se guarda
+  // en la misma tabla presupuesto_proyectado, en filas especiales con categoría "__CONFIG__"
+  // (así no hace falta crear otra tabla en Supabase). Nunca se muestran como ítems.
+  const PA_META = '__CONFIG__';
+  function paLeerConfig(rows){
+    const meta = (rows||[]).filter(r=>r.categoria===PA_META);
+    if(!meta.length) return null;
+    const v = mes => (meta.find(r=>r.mes===mes)||{}).monto;
+    return { anioRef: v('ENERO') || null, ajustePct: (v('FEBRERO')||0)/100, fijado: v('MARZO')===1 };
+  }
+  async function paGuardarConfig(anio, cfg){
+    await sb.from('presupuesto_proyectado').delete().eq('anio', anio).eq('categoria', PA_META);
+    const { error } = await sb.from('presupuesto_proyectado').insert([
+      { anio, categoria: PA_META, mes:'ENERO', monto: cfg.anioRef||0 },
+      { anio, categoria: PA_META, mes:'FEBRERO', monto: Math.round((cfg.ajustePct||0)*100) },
+      { anio, categoria: PA_META, mes:'MARZO', monto: cfg.fijado ? 1 : 0 },
+    ]);
+    return error;
+  }
+
+  // Al entrar a la pestaña abre directo el presupuesto del año en curso (si existe), o el último
+  // año que tenga presupuesto guardado — así no parece que "se perdió" cada vez que se entra.
+  async function paInitYearSelects(){
     const selRef = document.getElementById('pa-anioRef');
     const selObj = document.getElementById('pa-anioObj');
-    if(!selRef || selRef.options.length) { if(selRef && selRef.options.length) return; }
+    if(!selRef || selRef.options.length) return;
     const anioActual = new Date().getFullYear();
-    if(!state.paAnioRef) state.paAnioRef = anioActual;
-    if(!state.paAnioObj) state.paAnioObj = anioActual + 1;
+    if(!state.paAnioObj){
+      const { data } = await sbAll(()=>sb.from('presupuesto_proyectado').select('anio').order('id'));
+      const anios = Array.from(new Set((data||[]).map(r=>r.anio))).sort((x,y)=>x-y);
+      state.paAnioObj = anios.includes(anioActual) ? anioActual : (anios.length ? anios[anios.length-1] : anioActual);
+    }
+    if(!state.paAnioRef) state.paAnioRef = state.paAnioObj - 1;
     const opts = [];
     for(let y=2015; y<=2050; y++) opts.push(y);
     selRef.innerHTML = opts.map(y=>`<option value="${y}" ${y===state.paAnioRef?'selected':''}>${y}</option>`).join('');
     selObj.innerHTML = opts.map(y=>`<option value="${y}" ${y===state.paAnioObj?'selected':''}>${y}</option>`).join('');
     selRef.addEventListener('change', ()=>{ state.paAnioRef = parseInt(selRef.value,10); });
-    selObj.addEventListener('change', ()=>{ state.paAnioObj = parseInt(selObj.value,10); renderPresupuestoAnual(); });
+    selObj.addEventListener('change', ()=>{ state.paAnioObj = parseInt(selObj.value,10); state.paAnioRef = state.paAnioObj - 1; selRef.value = String(state.paAnioRef); renderPresupuestoAnual(); });
+  }
+
+  async function paToggleFijado(fijar){
+    const anio = state.paAnioObj;
+    const cfgActual = state.paConfig || { anioRef: state.paAnioRef, ajustePct: parseFloat(document.getElementById('pa-ajustePct').value)||0 };
+    if(!fijar && !confirm(`¿Desfijar el presupuesto de ${anio}?\n\nVas a poder editarlo, regenerarlo o borrarlo. Los montos no cambian hasta que los toques.`)) return;
+    const err = await paGuardarConfig(anio, { ...cfgActual, fijado: fijar });
+    if(err){ showToast('Error guardando: '+err.message, true); return; }
+    showToast(fijar ? `Presupuesto ${anio} fijado 🔒` : `Presupuesto ${anio} desfijado`);
+    await renderPresupuestoAnual();
   }
 
   async function paGenerarDesdeReferencia(){
     const anioRef = state.paAnioRef, anioObj = state.paAnioObj;
     const ajustePct = parseFloat(document.getElementById('pa-ajustePct').value) || 0;
+    if(state.paConfig && state.paConfig.fijado){ showToast(`El presupuesto de ${anioObj} está fijado. Desfijalo primero si lo querés regenerar.`, true); return; }
     if(anioRef === anioObj){ showToast('El año de referencia y el año a presupuestar no pueden ser el mismo.', true); return; }
     if(!confirm(`¿Generar el presupuesto de ${anioObj} a partir de ${anioRef}, con un ajuste de ${ajustePct}%?\n\nEsto reemplaza cualquier presupuesto que ya exista para ${anioObj}.`)) return;
 
@@ -4617,7 +4851,8 @@
     const nuevas = filtrados.map(r=>({ anio: anioObj, categoria: r.categoria, mes: r.mes, monto: Math.round((r.monto||0) * factor) }));
     const { error: eIns } = await sb.from('presupuesto_proyectado').insert(nuevas);
     if(eIns){ showToast('Error guardando el presupuesto: '+eIns.message, true); return; }
-    showToast(`Presupuesto de ${anioObj} generado a partir de ${anioRef} (+${ajustePct}%)`);
+    await paGuardarConfig(anioObj, { anioRef, ajustePct, fijado:false });
+    showToast(`Presupuesto de ${anioObj} generado a partir de ${anioRef} (+${ajustePct}%). Revisalo y tocá "Fijar presupuesto" para dejarlo guardado.`);
     await renderPresupuestoAnual();
   }
 
@@ -4628,6 +4863,7 @@
 
   async function paUpdateCelda(categoria, mes, valor){
     const anioObj = state.paAnioObj;
+    if(state.paConfig && state.paConfig.fijado){ showToast('El presupuesto está fijado. Desfijalo para editarlo.', true); await renderPresupuestoAnual(); return; }
     const monto = parseFloat(valor) || 0;
     const { data: existing, error: eSel } = await sb.from('presupuesto_proyectado').select('id').eq('anio', anioObj).eq('categoria', categoria).eq('mes', mes);
     if(eSel){ showToast('Error guardando: '+eSel.message, true); return; }
@@ -4643,12 +4879,12 @@
 
   async function renderPresupuestoAnual(){
     if(!document.getElementById('pa-kpis')) return;
-    paInitYearSelects();
+    await paInitYearSelects();
     const anioObj = state.paAnioObj;
     document.getElementById('pa-anioObjLabel').textContent = anioObj;
     document.getElementById('pa-anioObjLabel2').textContent = anioObj;
 
-    const { data: proyRows, error: e1 } = await sb.from('presupuesto_proyectado').select('*').eq('anio', anioObj);
+    const { data: proyTodas, error: e1 } = await sb.from('presupuesto_proyectado').select('*').eq('anio', anioObj);
     if(e1){
       if(e1.message && e1.message.includes('presupuesto_proyectado')){
         document.getElementById('pa-tableBody').innerHTML = `<tr><td colspan="14" class="empty-row">Falta crear la tabla "presupuesto_proyectado" en Supabase antes de poder usar esta pestaña (ver instrucciones que te pasé por chat).</td></tr>`;
@@ -4658,6 +4894,27 @@
       }
       showToast('Error cargando presupuesto: '+e1.message, true); return;
     }
+    const proyRows = (proyTodas||[]).filter(r=>r.categoria!==PA_META);
+    const cfg = paLeerConfig(proyTodas);
+    state.paConfig = cfg;
+    const fijado = !!(cfg && cfg.fijado);
+    if(cfg){
+      if(cfg.anioRef){ state.paAnioRef = cfg.anioRef; const sr=document.getElementById('pa-anioRef'); if(sr) sr.value = String(cfg.anioRef); }
+      document.getElementById('pa-ajustePct').value = cfg.ajustePct;
+    }
+    document.getElementById('module-presupuestoanual').classList.toggle('pa-fijado', fijado);
+    ['pa-anioRef','pa-ajustePct','pa-btnGenerar','pa-btnReset'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = fijado; });
+    const tienePresupuesto = paCategorias(proyRows).length > 0;
+    document.getElementById('pa-btnFijar').style.display = (!fijado && tienePresupuesto) ? '' : 'none';
+    const estadoEl = document.getElementById('pa-estado');
+    if(fijado){
+      estadoEl.innerHTML = `<div class="pa-estado fijo"><span>🔒 <b>Presupuesto ${anioObj} fijado</b>${cfg.anioRef?` — base ${cfg.anioRef}${cfg.ajustePct?` + ${cfg.ajustePct}% de ajuste`:''}`:''}. Queda guardado así; el Real se va comparando solo.</span><button class="btn ghost small" onclick="paToggleFijado(false)">Desfijar para editar</button></div>`;
+    } else if(tienePresupuesto){
+      estadoEl.innerHTML = `<div class="pa-estado libre"><span>✏️ El presupuesto de ${anioObj} está guardado pero <b>sin fijar</b>: podés editar celdas o regenerarlo. Cuando esté como querés, tocá <b>"Fijar presupuesto"</b>.</span></div>`;
+    } else {
+      estadoEl.innerHTML = '';
+    }
+
     const { data: realRows, error: e2 } = await sb.from('presupuesto').select('categoria,mes,monto').eq('anio', anioObj);
     if(e2){ showToast('Error cargando real: '+e2.message, true); return; }
     const realFiltrado = (realRows||[]).filter(r=>!presupuestoExcluida(r.categoria) && presupuestoTipoDe(r.categoria)!=='interes' && presupuestoTipoDe(r.categoria)!=='compra');
@@ -4675,7 +4932,7 @@
           const row = proyRows.find(r=>r.categoria===cat && r.mes===mes);
           const v = row?.monto || 0;
           rowTotal += v; totalesPorMes[i] += v;
-          return `<td><input class="cell" type="number" value="${v}" onchange="paUpdateCelda('${escapeHtml(cat).replace(/'/g,"\\'")}','${mes}',this.value)"></td>`;
+          return `<td><input class="cell" type="number" value="${v}" ${fijado?'readonly tabindex="-1"':''} onchange="paUpdateCelda('${escapeHtml(cat).replace(/'/g,"\\'")}','${mes}',this.value)"></td>`;
         }).join('');
         totalAnual += rowTotal;
         return `<tr><td class="item-name" style="text-align:left;">${escapeHtml(cat)}</td>${celdas}<td class="mono col-total">$ ${fmt(rowTotal)}</td></tr>`;
@@ -4686,17 +4943,24 @@
 
     const totalPresupuestado = categorias.reduce((s,cat)=>s + MESES.reduce((s2,mes)=>{ const r=proyRows.find(x=>x.categoria===cat&&x.mes===mes); return s2+(r?.monto||0); },0), 0);
     const totalReal = realFiltrado.reduce((s,r)=>s+(r.monto||0),0);
-    const desvio = totalReal - totalPresupuestado;
-    const desvioPct = totalPresupuestado ? desvio/totalPresupuestado : 0;
+    // Para que la diferencia sea justa, se compara el Real contra lo presupuestado de los MISMOS meses
+    // que ya tienen gastos reales cargados (no contra el año entero).
+    const mesesConReal = MESES.filter(m=>realFiltrado.some(r=>r.mes===m && (r.monto||0)!==0));
+    const ultimoMesReal = mesesConReal.length ? mesesConReal[mesesConReal.length-1] : null;
+    const mesesHasta = ultimoMesReal ? MESES.slice(0, MESES.indexOf(ultimoMesReal)+1) : [];
+    const presHasta = proyRows.filter(r=>mesesHasta.includes(r.mes)).reduce((s,r)=>s+(r.monto||0),0);
+    const desvio = totalReal - presHasta;
+    const desvioPct = presHasta ? desvio/presHasta : 0;
+    const hastaLbl = ultimoMesReal ? `ene–${MESES_CORTO[MESES.indexOf(ultimoMesReal)].toLowerCase()}` : 'a la fecha';
     document.getElementById('pa-kpis').innerHTML = `
-      <div class="kpi"><div class="label">Presupuestado ${anioObj}</div><div class="value">$ ${fmt(totalPresupuestado)}</div></div>
-      <div class="kpi"><div class="label">Real ${anioObj} (a la fecha)</div><div class="value">$ ${fmt(totalReal)}</div></div>
-      <div class="kpi ${desvio>0?'':'accent'}"><div class="label">Desvío</div><div class="value" style="color:${desvio>0?'var(--bad)':'var(--good)'};">${desvio>0?'+':''}$ ${fmt(desvio)}</div></div>
-      <div class="kpi"><div class="label">Desvío %</div><div class="value">${fmtPct(desvioPct)}</div></div>`;
+      <div class="kpi"><div class="label">Presupuestado ${anioObj} (año completo)</div><div class="value">$ ${fmt(totalPresupuestado)}</div></div>
+      <div class="kpi"><div class="label">Presupuestado ${hastaLbl}</div><div class="value">$ ${fmt(presHasta)}</div></div>
+      <div class="kpi"><div class="label">Real ${hastaLbl}</div><div class="value">$ ${fmt(totalReal)}</div></div>
+      <div class="kpi ${desvio>0?'':'accent'}"><div class="label">Desvío ${hastaLbl}${infoBadge('Real − presupuestado de los mismos meses. En rojo (+) gastaste más de lo presupuestado; en verde (−) gastaste menos.')}</div><div class="value" style="color:${desvio>0?'var(--bad)':'var(--good)'};">${desvio>0?'+':''}$ ${fmt(desvio)}</div><div class="kpi-sub">${desvio>0?'+':''}${fmtPct(desvioPct)}</div></div>`;
 
     const todasCats = Array.from(new Set([...categorias, ...paCategorias(realFiltrado)])).sort();
     document.getElementById('pa-comparativoBody').innerHTML = todasCats.length ? todasCats.map(cat=>{
-      const pres = MESES.reduce((s,mes)=>{ const r=proyRows.find(x=>x.categoria===cat&&x.mes===mes); return s+(r?.monto||0); },0);
+      const pres = mesesHasta.reduce((s,mes)=>{ const r=proyRows.find(x=>x.categoria===cat&&x.mes===mes); return s+(r?.monto||0); },0);
       const real = realFiltrado.filter(r=>r.categoria===cat).reduce((s,r)=>s+(r.monto||0),0);
       const d = real - pres;
       const dp = pres ? d/pres : 0;
@@ -4706,6 +4970,7 @@
 
   async function paResetPresupuesto(){
     const anioObj = state.paAnioObj;
+    if(state.paConfig && state.paConfig.fijado){ showToast(`El presupuesto de ${anioObj} está fijado. Desfijalo primero si lo querés borrar.`, true); return; }
     if(!confirm(`¿Borrar TODO el presupuesto de ${anioObj}?\n\nEsto no toca tus Gastos reales, solo el presupuesto proyectado. Después lo podés volver a generar las veces que quieras.`)) return;
     const { error } = await sb.from('presupuesto_proyectado').delete().eq('anio', anioObj);
     if(error){ showToast('Error borrando: '+error.message, true); return; }
@@ -4713,7 +4978,155 @@
     await renderPresupuestoAnual();
   }
 
-  function showModule(name){
+  // ---------- SECCIONES MOVIBLES (subir / bajar cada bloque dentro de su pestaña) ----------
+  // Cada bloque (.collapsible o tarjeta negra .graf-card) recibe botones ↑ ↓ y un asa ⋮⋮ para
+  // arrastrar. El orden se guarda en item_orden (contexto 'secciones', cuenta = grupo), así se
+  // mantiene igual en la PC y en el celular. También queda una copia en el navegador.
+  function secSlug(t){ return (t||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40); }
+  function secTitulo(el){
+    const h = el.classList.contains('graf-card') ? el.querySelector('h3') : el.querySelector(':scope > .collapsible-head h3');
+    if(!h) return '';
+    return Array.from(h.childNodes).filter(n=>!(n.nodeType===1 && n.classList.contains('sec-move'))).map(n=>n.textContent).join('').trim();
+  }
+  function secBloques(parent){
+    return Array.from(parent.children).filter(c=>c.matches('.collapsible, .graf-card') && c.dataset.secId);
+  }
+  function secGrupoKey(parent){
+    if(parent.id) return parent.id;
+    const anc = parent.parentElement ? parent.parentElement.closest('[id]') : null;
+    return (anc ? anc.id : 'root') + '|' + (parent.className||'').toString().trim().replace(/\s+/g,'.');
+  }
+  function secLeerLocal(){ try{ return JSON.parse(localStorage.getItem('vt_secciones')||'{}'); }catch(e){ return {}; } }
+  function secGuardarLocal(map){ try{ localStorage.setItem('vt_secciones', JSON.stringify(map)); }catch(e){} }
+
+  function secAplicarOrden(parent, ids){
+    const bloques = secBloques(parent);
+    if(bloques.length < 2 || !ids || !ids.length) return;
+    const pos = id => { const i = ids.indexOf(id); return i<0 ? 999 : i; };
+    const ordenados = bloques.slice().sort((a,b)=>pos(a.dataset.secId)-pos(b.dataset.secId));
+    // Se reubican en los mismos "huecos" que ocupaban, sin tocar títulos ni tarjetas KPI de alrededor.
+    const marcas = bloques.map(b=>{ const m=document.createComment('sec'); parent.insertBefore(m,b); return m; });
+    ordenados.forEach((b,i)=>parent.insertBefore(b, marcas[i]));
+    marcas.forEach(m=>m.remove());
+  }
+  function secGuardarGrupo(parent){
+    const key = parent.dataset.secGrupo;
+    const ids = secBloques(parent).map(b=>b.dataset.secId);
+    const map = secLeerLocal(); map[key] = ids; secGuardarLocal(map);
+    guardarOrdenCategorias('secciones', key, ids);
+  }
+  function secMover(bloque, dir){
+    const parent = bloque.parentElement;
+    const bloques = secBloques(parent);
+    const i = bloques.indexOf(bloque), j = i + dir;
+    if(i<0 || j<0 || j>=bloques.length) return;
+    if(dir<0) parent.insertBefore(bloque, bloques[j]);
+    else parent.insertBefore(bloque, bloques[j].nextSibling);
+    secGuardarGrupo(parent);
+    bloque.scrollIntoView({ block:'nearest', behavior:'smooth' });
+  }
+
+  let secArrastrando = null;
+  function initSecciones(){
+    const grupos = new Set();
+    document.querySelectorAll('.module-block .collapsible, .module-block .graf-card').forEach(el=>{
+      const parent = el.parentElement;
+      const hermanos = Array.from(parent.children).filter(c=>c.matches('.collapsible, .graf-card'));
+      if(hermanos.length < 2) return;
+      const titulo = secTitulo(el);
+      el.dataset.secId = el.id || ('s-' + secSlug(titulo || String(hermanos.indexOf(el))));
+      parent.dataset.secGrupo = secGrupoKey(parent);
+      grupos.add(parent);
+      const h = el.classList.contains('graf-card') ? el.querySelector('h3') : el.querySelector(':scope > .collapsible-head h3');
+      if(!h || h.querySelector('.sec-move')) return;
+      const ctr = document.createElement('span');
+      ctr.className = 'sec-move';
+      ctr.innerHTML = `<span class="sec-drag" draggable="true" title="Arrastrá para mover este bloque">⋮⋮</span><button type="button" data-dir="-1" title="Subir este bloque">↑</button><button type="button" data-dir="1" title="Bajar este bloque">↓</button>`;
+      ctr.addEventListener('click', ev=>{
+        ev.stopPropagation();
+        const b = ev.target.closest('button[data-dir]');
+        if(b) secMover(el, parseInt(b.dataset.dir,10));
+      });
+      const asa = ctr.querySelector('.sec-drag');
+      asa.addEventListener('dragstart', ev=>{ secArrastrando = el; el.classList.add('sec-dragging'); ev.dataTransfer.effectAllowed='move'; try{ ev.dataTransfer.setData('text/plain', el.dataset.secId); }catch(e){} });
+      asa.addEventListener('dragend', ()=>{ el.classList.remove('sec-dragging'); if(secArrastrando){ secGuardarGrupo(secArrastrando.parentElement); } secArrastrando = null; });
+      el.addEventListener('dragover', ev=>{
+        if(!secArrastrando || secArrastrando===el || secArrastrando.parentElement!==el.parentElement) return;
+        ev.preventDefault();
+        const r = el.getBoundingClientRect();
+        const antes = (ev.clientY - r.top) < r.height/2;
+        el.parentElement.insertBefore(secArrastrando, antes ? el : el.nextSibling);
+      });
+      h.appendChild(ctr);
+    });
+    // Orden guardado: primero el del navegador (instantáneo) y después el de Supabase (manda).
+    const local = secLeerLocal();
+    grupos.forEach(g=>secAplicarOrden(g, local[g.dataset.secGrupo]));
+    sb.from('item_orden').select('cuenta,categoria,orden').eq('contexto','secciones').then(({ data, error })=>{
+      if(error || !data || !data.length) return;
+      const porGrupo = {};
+      data.slice().sort((a,b)=>a.orden-b.orden).forEach(r=>{ (porGrupo[r.cuenta] = porGrupo[r.cuenta] || []).push(r.categoria); });
+      grupos.forEach(g=>{ const ids = porGrupo[g.dataset.secGrupo]; if(ids){ secAplicarOrden(g, ids); local[g.dataset.secGrupo] = ids; } });
+      secGuardarLocal(local);
+    });
+  }
+
+  // ---------- CANDADO de Pasivos ----------
+  // Para entrar a Pasivos se pide de nuevo la contraseña de la cuenta (la misma del login), y se
+  // verifica contra Supabase. Queda abierto mientras estás en Pasivos; al salir de la pestaña se
+  // vuelve a cerrar. No hay ninguna clave extra guardada en el código.
+  let pasivosAbierto = false;
+  function pasivosActualizarBoton(){
+    const b = document.querySelector('.module-switch-nav button[data-module="pasivos"]');
+    if(b) b.textContent = (pasivosAbierto ? '🔓 ' : '🔒 ') + 'Pasivos';
+  }
+  function pedirAccesoPasivos(){
+    return new Promise(resolve=>{
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-overlay';
+      overlay.innerHTML = `<div class="modal-box" style="max-width:360px;">
+        <h2>🔒 Pasivos protegido</h2>
+        <p class="hint" style="margin:4px 0 14px;font-size:12.5px;color:var(--ink-soft);">Ingresá la contraseña de tu cuenta para ver tus deudas.</p>
+        <form id="pasLockForm">
+          <input type="password" id="pasLockPass" autocomplete="current-password" placeholder="Contraseña" style="width:100%;padding:10px 12px;border:1px solid var(--line-strong);border-radius:8px;font-size:14px;box-sizing:border-box;">
+          <div id="pasLockErr" style="color:var(--bad);font-size:12px;min-height:16px;margin:6px 0 4px;"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button type="button" class="btn ghost" id="pasLockCancel">Cancelar</button>
+            <button type="submit" class="btn" id="pasLockOk">Entrar</button>
+          </div>
+        </form>
+      </div>`;
+      document.body.appendChild(overlay);
+      const input = overlay.querySelector('#pasLockPass');
+      const err = overlay.querySelector('#pasLockErr');
+      const ok = overlay.querySelector('#pasLockOk');
+      setTimeout(()=>input.focus(), 30);
+      const cerrar = (r)=>{ overlay.remove(); resolve(r); };
+      overlay.querySelector('#pasLockCancel').addEventListener('click', ()=>cerrar(false));
+      overlay.addEventListener('click', ev=>{ if(ev.target===overlay) cerrar(false); });
+      overlay.querySelector('#pasLockForm').addEventListener('submit', async ev=>{
+        ev.preventDefault();
+        if(!input.value){ err.textContent = 'Escribí tu contraseña.'; return; }
+        ok.disabled = true; ok.textContent = 'Verificando…'; err.textContent = '';
+        const { data: u } = await sb.auth.getUser();
+        const email = u && u.user ? u.user.email : null;
+        const { error } = email ? await sb.auth.signInWithPassword({ email, password: input.value }) : { error: { message: 'sin sesión' } };
+        ok.disabled = false; ok.textContent = 'Entrar';
+        if(error){ err.textContent = 'Contraseña incorrecta.'; input.select(); return; }
+        cerrar(true);
+      });
+    });
+  }
+
+  async function showModule(name){
+    if(name==='pasivos' && !pasivosAbierto){
+      const ok = await pedirAccesoPasivos();
+      if(!ok) return;
+      pasivosAbierto = true;
+    } else if(name!=='pasivos' && pasivosAbierto){
+      pasivosAbierto = false;
+    }
+    pasivosActualizarBoton();
     document.querySelectorAll('.module-switch-nav button').forEach(b=>b.classList.toggle('active', b.dataset.module===name));
     document.querySelectorAll('.module-block').forEach(m=>m.classList.toggle('active', m.id==='module-'+name));
     if(name==='graficos') renderGraficos();
@@ -4937,7 +5350,7 @@
       const s = plan.sheets[sheetKey];
       if(!s.rows.length) continue;
       const def = s.def;
-      const { data: existing, error: fetchErr } = await sb.from(def.table).select(['id', ...def.key].join(','));
+      const { data: existing, error: fetchErr } = await sbAll(()=>sb.from(def.table).select(['id', ...def.key].join(',')).order('id'));
       if(fetchErr){ showToast(`Error leyendo ${sheetKey}: ${fetchErr.message}`, true); failed += s.rows.length; continue; }
       const keyOf = (obj)=> def.key.map(k=>obj[k]).join('||');
       const existingMap = new Map((existing||[]).map(r=>[keyOf(r), r.id]));
