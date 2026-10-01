@@ -498,6 +498,7 @@
 
   .hist-pie{text-align:center;margin:6px 0 26px;}
   .hist-pie button{background:none;border:none;color:var(--ink-soft);font-size:11.5px;cursor:pointer;opacity:.7;font-family:'IBM Plex Sans',sans-serif;padding:4px 10px;}
+  .hist-pie button.resp-aviso{color:var(--bad);opacity:1;font-weight:600;}
   .hist-pie button:hover{opacity:1;text-decoration:underline;}
   .hist-fila{display:grid;grid-template-columns:92px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
   .hist-fila .h-fecha{color:var(--ink-soft);}
@@ -1324,7 +1325,7 @@
     </main>
   </div>
 
-  <div class="hist-pie"><button type="button" id="histBtn" title="Historial de cambios">&#128339; Historial</button></div>
+  <div class="hist-pie"><button type="button" id="histBtn" title="Historial de cambios">&#128339; Historial</button><button type="button" id="respBtn" title="Respaldo de tus datos">&#128190; Respaldo</button></div>
 
   <!-- ---------- ASISTENTE (botón flotante) ---------- -->
   <button type="button" class="as-fab" id="asFab" title="Asistente: preguntas sobre el negocio" aria-label="Abrir el asistente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg></button>
@@ -1505,6 +1506,7 @@
     appInited = true;
 
     document.getElementById('logoutBtn').addEventListener('click', async ()=>{ await sb.auth.signOut(); });
+    setTimeout(()=>{ try{ respRevisar(); }catch(e){} }, 2500);
 
     document.getElementById('btnToggleAmounts').addEventListener('click', (ev)=>{
       const hidden = document.body.classList.toggle('amounts-hidden');
@@ -6365,6 +6367,7 @@
     pasivos:   { nombre:'Pasivos',   titulo:'Pasivos protegido',   txt:'Ingresá tu PIN para ver tus deudas.' },
     objetivos: { nombre:'Objetivos', titulo:'Objetivos protegido', txt:'Ingresá tu PIN para ver tus objetivos y análisis.' },
     ocultar:   { nombre:'Ocultar',   titulo:'Ocultar sección',     txt:'Ingresá tu PIN para ocultar esta sección del panel.' },
+    respaldo:  { nombre:'Respaldo',  titulo:'Respaldo de datos',    txt:'Ingresá tu PIN para descargar el respaldo.' },
     historial: { nombre:'Historial', titulo:'Historial de cambios', txt:'Ingresá tu PIN para ver el historial.' },
     mostrar:   { nombre:'Mostrar',   titulo:'Secciones ocultas',   txt:'Ingresá tu PIN para ver las secciones ocultas.' },
   };
@@ -6842,6 +6845,171 @@
     pintar();
   }
   document.getElementById('histBtn').addEventListener('click', abrirHistorial);
+
+
+  // ---------- Respaldo de datos (JSON completo + Excel prolijo), con PIN ----------
+  const RESP_TABLAS = ['ventas','compras','compras_facturas','presupuesto','presupuesto_tipo','presupuesto_estado','presupuesto_proyectado','flujo_caja','flujo_caja_movimientos','flujo_gasto_operativo','flujo_saldo_inicial','item_orden','pasivos','pasivos_ajustes','pasivos_campos_extra','pasivos_historial','pasivos_vales','pasivos_vinculo_compras'];
+  function respFechaTxt(){ const d=new Date(); const z=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
+  async function respMarcarHecho(){
+    const hoy = respFechaTxt();
+    await sb.from('item_orden').upsert([{ contexto:'respaldo', cuenta:'ultimo', categoria:hoy, orden:0 }], { onConflict:'contexto,cuenta,categoria' });
+    await sb.from('item_orden').delete().eq('contexto','respaldo').eq('cuenta','ultimo').neq('categoria', hoy);
+    respPintarEstado(hoy);
+  }
+  function respPintarEstado(fecha){
+    const b = document.getElementById('respBtn'); if(!b) return;
+    if(!fecha){ b.textContent = '💾 Respaldo'; b.classList.add('resp-aviso'); b.title = 'Todavía no hiciste ningún respaldo'; return; }
+    const dias = Math.floor((Date.now()-new Date(fecha+'T12:00:00').getTime())/864e5);
+    b.title = 'Último respaldo: '+fecha+' (hace '+dias+' días)';
+    if(dias>30){ b.textContent = '💾 Respaldo (hace '+dias+' días)'; b.classList.add('resp-aviso'); }
+    else { b.textContent = '💾 Respaldo'; b.classList.remove('resp-aviso'); }
+  }
+  async function respRevisar(){
+    const { data, error } = await sb.from('item_orden').select('categoria').eq('contexto','respaldo').eq('cuenta','ultimo');
+    if(error) return;
+    const f = data && data[0] ? data[0].categoria : null;
+    respPintarEstado(f);
+    const dias = f ? Math.floor((Date.now()-new Date(f+'T12:00:00').getTime())/864e5) : 999;
+    if(dias>30) showToast('Hace más de un mes que no hacés el respaldo. Lo encontrás abajo, en "Respaldo".', true);
+  }
+  function respDescargar(blob, nombre){
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  }
+  async function respJson(){
+    const out = { generado: new Date().toISOString(), version: 1, tablas:{}, omitidas:[] };
+    for(const t of RESP_TABLAS){
+      const { data, error } = await sbAll(()=>sb.from(t).select('*').order('id'));
+      if(error){ out.omitidas.push(t+': '+error.message); continue; }
+      out.tablas[t] = t==='item_orden' ? data.filter(r=>r.contexto!=='pin') : data;
+    }
+    respDescargar(new Blob([JSON.stringify(out)],{type:'application/json'}), `respaldo_vernier_${respFechaTxt()}.json`);
+    await respMarcarHecho();
+    const n = Object.values(out.tablas).reduce((a,x)=>a+x.length,0);
+    showToast(`Respaldo descargado (${n.toLocaleString('es-UY')} registros).`);
+  }
+  async function respExcel(){
+    if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar la librería de Excel (revisá tu conexión).', true); return; }
+    const get = async t=>{ const r = await sbAll(()=>sb.from(t).select('*').order('id')); return r.error ? [] : r.data; };
+    const [ven,com,pre,tipos,flu,sal,pas,pasH,proy] = await Promise.all(['ventas','compras','presupuesto','presupuesto_tipo','flujo_caja','flujo_saldo_inicial','pasivos','pasivos_historial','presupuesto_proyectado'].map(get));
+    const tipoDe = {}; tipos.forEach(r=>{ tipoDe[r.categoria] = r.tipo; });
+    const TIPO_TXT = { normal:'Normal', sueldo:'Sueldo', interes:'Interés / deuda', compra:'Compra' };
+    const wb = XLSX.utils.book_new();
+    const hojas = [];
+    const add = (nombre, aoa, anchos)=>{
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = (anchos||[]).map(w=>({wch:w}));
+      XLSX.utils.book_append_sheet(wb, ws, nombre.slice(0,31)); hojas.push(nombre);
+    };
+    const mesIdx = m=>MESES.indexOf(String(m||'').toUpperCase());
+    const num = v=> (v===null||v===undefined||v==='') ? 0 : Number(v)||0;
+    const cabMeses = [...MESES_CORTO,'Total'];
+    const filaMeses = (map)=>{ const v = MESES.map((_,i)=>map[i]||0); return [...v, v.reduce((a,b)=>a+b,0)]; };
+    const anios = a=>[...new Set(a)].filter(x=>x!==null&&x!==undefined).sort((x,y)=>x-y);
+    const resumen = {};
+    const R = a=>{ if(!resumen[a]) resumen[a]={venta:0,compras:0,fijo:0,sueldo:0,interes:0}; return resumen[a]; };
+
+    {
+      const aoa = [['Año','Concepto',...cabMeses]];
+      anios(ven.map(r=>r.anio)).forEach(a=>{
+        const e={},c={}; ven.filter(r=>r.anio===a).forEach(r=>{ const i=mesIdx(r.mes); if(i>=0){ e[i]=(e[i]||0)+num(r.efectivo); c[i]=(c[i]||0)+num(r.credito); } });
+        const t={}; MESES.forEach((_,i)=>{ t[i]=(e[i]||0)+(c[i]||0); });
+        aoa.push([a,'Efectivo',...filaMeses(e)],[a,'Crédito',...filaMeses(c)],[a,'Venta total',...filaMeses(t)],[]);
+        R(a).venta = filaMeses(t)[12];
+      });
+      add('Ventas', aoa, [7,18,...Array(13).fill(12)]);
+    }
+    {
+      const aoa = [['Año','Concepto',...cabMeses]];
+      anios(com.map(r=>r.anio)).forEach(a=>{
+        const m={inicial:{},reposicion:{},otros:{}}, t={};
+        com.filter(r=>r.anio===a).forEach(r=>{ const i=mesIdx(r.mes); if(i<0) return; ['inicial','reposicion','otros'].forEach(k=>{ m[k][i]=(m[k][i]||0)+num(r[k]); t[i]=(t[i]||0)+num(r[k]); }); });
+        aoa.push([a,'Pedido inicial',...filaMeses(m.inicial)],[a,'Reposición',...filaMeses(m.reposicion)],[a,'Otros',...filaMeses(m.otros)],[a,'Compras total',...filaMeses(t)],[]);
+        R(a).compras = filaMeses(t)[12];
+      });
+      add('Compras', aoa, [7,18,...Array(13).fill(12)]);
+    }
+    {
+      const aoa = [['Año','Ítem de gasto','Tipo',...cabMeses]];
+      anios(pre.map(r=>r.anio)).forEach(a=>{
+        const cats = [...new Set(pre.filter(r=>r.anio===a).map(r=>r.categoria))].sort((x,y)=>String(x).localeCompare(String(y)));
+        cats.forEach(cat=>{
+          const m={}; pre.filter(r=>r.anio===a&&r.categoria===cat).forEach(r=>{ const i=mesIdx(r.mes); if(i>=0) m[i]=(m[i]||0)+num(r.monto); });
+          const f = filaMeses(m), tp = tipoDe[cat]||'normal';
+          aoa.push([a,cat,TIPO_TXT[tp]||tp,...f]);
+          if(tp==='normal') R(a).fijo+=f[12]; else if(tp==='sueldo') R(a).sueldo+=f[12]; else if(tp==='interes') R(a).interes+=f[12];
+        });
+        aoa.push([]);
+      });
+      add('Gastos', aoa, [7,34,16,...Array(13).fill(12)]);
+    }
+    {
+      const aoa = [['Año','Venta','Compras','Gasto fijo (Normal)','Sueldo','Intereses y deudas','Resultado','Resultado después de intereses']];
+      Object.keys(resumen).map(Number).sort((a,b)=>a-b).forEach(a=>{
+        const r=resumen[a], res=r.venta-r.compras-r.fijo-r.sueldo;
+        aoa.push([a,r.venta,r.compras,r.fijo,r.sueldo,r.interes,res,res-r.interes]);
+      });
+      wb.SheetNames.unshift('Resumen'); 
+      const ws = XLSX.utils.aoa_to_sheet(aoa); ws['!cols']=[7,14,14,18,14,18,14,26].map(w=>({wch:w})); wb.Sheets['Resumen']=ws;
+    }
+    {
+      const cuentas = [...new Set(flu.map(r=>r.cuenta))].sort();
+      cuentas.forEach(cu=>{
+        const aoa = [['Año','Tipo','Categoría',...cabMeses]];
+        const filas = flu.filter(r=>r.cuenta===cu);
+        anios(filas.map(r=>r.anio)).forEach(a=>{
+          const si={}; sal.filter(r=>r.cuenta===cu&&r.anio===a).forEach(r=>{ const i=mesIdx(r.mes); if(i>=0) si[i]=(si[i]||0)+num(r.monto); });
+          aoa.push([a,'Saldo inicial','',...filaMeses(si)]);
+          [['ingreso','Ingreso'],['gasto','Gasto']].forEach(([tk,tl])=>{
+            const cats=[...new Set(filas.filter(r=>r.anio===a&&r.tipo===tk).map(r=>r.categoria))].sort((x,y)=>String(x).localeCompare(String(y)));
+            cats.forEach(cat=>{ const m={}; filas.filter(r=>r.anio===a&&r.tipo===tk&&r.categoria===cat).forEach(r=>{ const i=mesIdx(r.mes); if(i>=0) m[i]=(m[i]||0)+num(r.monto); }); aoa.push([a,tl,cat,...filaMeses(m)]); });
+          });
+          aoa.push([]);
+        });
+        add('Mov - '+cu.replace(/[\\\/\?\*\[\]:]/g,' '), aoa, [7,14,34,...Array(13).fill(12)]);
+      });
+    }
+    {
+      const cols = SHEET_DEFS.pasivos.cols;
+      add('Pasivos', [cols, ...pas.map(r=>cols.map(c=>r[c]??''))], cols.map(()=>18));
+      const ch = SHEET_DEFS.pasivos_historial.cols;
+      add('Pasivos historial', [ch, ...pasH.map(r=>ch.map(c=>r[c]??''))], ch.map(()=>16));
+    }
+    {
+      const aoa = [['Año','Categoría',...cabMeses]];
+      const pr = proy.filter(r=>r.categoria!==PA_META);
+      anios(pr.map(r=>r.anio)).forEach(a=>{
+        const cats=[...new Set(pr.filter(r=>r.anio===a).map(r=>r.categoria))].sort((x,y)=>String(x).localeCompare(String(y)));
+        cats.forEach(cat=>{ const m={}; pr.filter(r=>r.anio===a&&r.categoria===cat).forEach(r=>{ const i=mesIdx(r.mes); if(i>=0) m[i]=(m[i]||0)+num(r.monto); }); aoa.push([a,cat,...filaMeses(m)]); });
+        aoa.push([]);
+      });
+      add('Presupuesto anual', aoa, [7,34,...Array(13).fill(12)]);
+    }
+    const ley = [['Respaldo del dashboard Vernier Tacuarembó'],['Generado el '+new Date().toLocaleString('es-UY')],[''],['Hojas: Resumen, Ventas, Compras, Gastos, Mov - (una por cuenta), Pasivos, Pasivos historial, Presupuesto anual.'],['Gasto fijo = ítems de Gastos de tipo Normal. Resultado = Venta − Compras − Gasto fijo − Sueldo.'],['Para tener un Google Sheet: subí este archivo a Drive y abrilo con Hojas de cálculo de Google.']];
+    const wl = XLSX.utils.aoa_to_sheet(ley); wl['!cols']=[{wch:100}]; XLSX.utils.book_append_sheet(wb, wl, 'Léeme');
+    XLSX.writeFile(wb, `dashboard_vernier_${respFechaTxt()}.xlsx`);
+    await respMarcarHecho();
+    showToast('Excel descargado. Subilo a tu Drive para tenerlo como Google Sheet.');
+  }
+  async function abrirRespaldo(){
+    if(!(await pedirAccesoModulo('respaldo'))) return;
+    const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal-box" style="max-width:480px;"><h2>💾 Respaldo de datos</h2>
+      <p class="hint" style="margin:4px 0 14px;font-size:12.5px;color:var(--ink-soft);">Hacelo una vez por mes y guardá los archivos en tu Drive.</p>
+      <div style="display:grid;gap:10px;">
+        <button type="button" class="btn" id="respX" style="text-align:left;padding:12px 14px;"><b>Excel prolijo</b><br><span style="font-size:12px;opacity:.8;">Resumen, Ventas, Compras, Gastos, cada cuenta, Pasivos y Presupuesto anual, por mes. Para leer y guardar en tu Drive como Google Sheet.</span></button>
+        <button type="button" class="btn ghost" id="respJ" style="text-align:left;padding:12px 14px;"><b>Respaldo completo (JSON)</b><br><span style="font-size:12px;opacity:.8;">Todas las tablas tal cual están en la base. Es el que sirve para recuperar todo si pasa algo.</span></button>
+      </div><div id="respMsg" style="font-size:12.5px;color:var(--ink-soft);min-height:18px;margin-top:10px;"></div>
+      <div style="text-align:right;margin-top:6px;"><button type="button" class="btn ghost" id="respC">Cerrar</button></div></div>`;
+    document.body.appendChild(overlay);
+    const msg = overlay.querySelector('#respMsg');
+    const correr = async (btn, fn)=>{ btn.disabled = true; msg.textContent = 'Preparando…'; try{ await fn(); msg.textContent = 'Listo. Revisá tu carpeta de Descargas.'; }catch(e){ msg.textContent = 'No pude hacerlo: '+(e.message||e); } btn.disabled = false; };
+    overlay.querySelector('#respX').addEventListener('click', ev=>correr(ev.currentTarget, respExcel));
+    overlay.querySelector('#respJ').addEventListener('click', ev=>correr(ev.currentTarget, respJson));
+    overlay.querySelector('#respC').addEventListener('click', ()=>overlay.remove());
+    overlay.addEventListener('click', ev=>{ if(ev.target===overlay) overlay.remove(); });
+  }
+  document.getElementById('respBtn').addEventListener('click', abrirRespaldo);
 
   async function reloadEverything(){
     state.flujoActiveCuenta = null;
