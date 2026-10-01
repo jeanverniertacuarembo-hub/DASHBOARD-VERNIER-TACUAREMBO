@@ -36,7 +36,10 @@
   }
   *{box-sizing:border-box;}
   .graf-grid{display:grid;grid-template-columns:1fr;gap:14px;margin-top:14px;}
-  @media(min-width:860px){ .graf-grid{grid-template-columns:1fr 1fr;} .graf-grid .graf-wide{grid-column:1 / -1;} }
+  @media(min-width:860px){ .graf-grid{grid-template-columns:repeat(6,minmax(0,1fr));} .graf-grid .graf-card{grid-column:span 3;} .graf-grid .graf-wide{grid-column:1 / -1;} }
+  @media(min-width:1000px){ .graf-grid .graf-third{grid-column:span 2;} }
+  .sec-move .ar-h{display:none;}
+  @media(min-width:1000px){ .graf-third .sec-move .ar-v{display:none;} .graf-third .sec-move .ar-h{display:inline;} }
   .graf-card{background:var(--ink);border-radius:var(--radius);padding:16px 16px 12px;color:#fff;}
   .graf-card h3{margin:0 0 2px;font-size:13.5px;font-weight:600;color:#fff;}
   .graf-card .graf-sub{font-size:11.5px;color:#B8B8B2;margin:0 0 10px;}
@@ -44,6 +47,10 @@
   .graf-legend{display:flex;flex-wrap:wrap;gap:10px 14px;font-size:11.5px;color:#D8D8D4;margin-bottom:8px;}
   .graf-legend span{display:inline-flex;align-items:center;gap:5px;}
   .graf-legend i{width:9px;height:9px;border-radius:2px;display:inline-block;}
+  .gr-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin:2px 0 10px;}
+  .gr-ctl-mes{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px 8px;}
+  .gr-ctl label{font-size:11.5px;color:#B8B8B2;}
+  .gr-ctl select{padding:5px 8px;font-size:12px;}
   .graf-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px;}
   .graf-kpi{background:var(--ink);border-radius:var(--radius);padding:12px 14px;color:#fff;}
   .graf-kpi .label{font-size:11px;color:#B8B8B2;margin-bottom:4px;}
@@ -156,13 +163,18 @@
   .pa-estado{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin-top:12px;padding:10px 14px;border-radius:10px;font-size:12.5px;}
   .pa-estado.fijo{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent-ink);}
   .pa-estado.libre{background:#FFF7E6;border:1px solid #F5C77A;color:#7A4B00;}
-  #module-presupuestoanual.pa-fijado #pa-tableBody input.cell{background:transparent;border-color:transparent;pointer-events:none;}
+  #panel-presupuestoanual.pa-fijado #pa-tableBody input.cell{background:transparent;border-color:transparent;pointer-events:none;}
   .sec-move{display:inline-flex;align-items:center;gap:2px;margin-left:10px;vertical-align:middle;opacity:.45;transition:opacity .15s;}
-  .collapsible-head:hover .sec-move, .graf-card:hover .sec-move, .sec-move:focus-within{opacity:1;}
+  .collapsible-head:hover .sec-move, .graf-card:hover .sec-move, .section-title:hover .sec-move, .sec-move:focus-within{opacity:1;}
   .sec-move button, .sec-move .sec-drag{background:transparent;border:1px solid var(--line);color:var(--ink-soft);border-radius:6px;font-size:11px;line-height:1;padding:3px 6px;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
   .sec-move .sec-drag{cursor:grab;letter-spacing:-1px;}
   .graf-card .sec-move button, .graf-card .sec-move .sec-drag{border-color:#3A3A38;color:#B8B8B2;}
   .sec-move button:hover{background:var(--accent-soft);color:var(--accent-ink);}
+  .sec-move button[data-ocultar]:hover{background:#FBEAE6;color:var(--bad);border-color:var(--bad);}
+  .sec-oculta{display:none !important;}
+  .sec-pie{margin:18px 0 6px;text-align:center;font-size:12px;color:var(--ink-soft);}
+  .sec-pie button{background:none;border:1px solid var(--line-strong);border-radius:999px;padding:5px 14px;font-size:12px;color:var(--ink-soft);cursor:pointer;font-family:'IBM Plex Sans',sans-serif;}
+  .sec-pie button:hover{background:var(--accent-soft);color:var(--accent-ink);}
   .sec-dragging{opacity:.5;outline:2px dashed var(--accent);}
   @media (hover:none){ .sec-move{opacity:.8;} .sec-move .sec-drag{display:none;} }
   .pe-intro{font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;}
@@ -212,7 +224,7 @@
   tr.total-row td{border-top:2px solid var(--line-strong);font-weight:600;}
   tr.total-row td.item-name{font-weight:700;}
 
-  header.app{background:var(--ink);color:#fff;padding:16px 20px 0;position:sticky;top:41px;z-index:50;}
+  header.app{background:var(--ink);color:#fff;padding:16px max(20px,calc((100% - 1148px)/2)) 0;position:sticky;top:41px;z-index:50;}
   .app-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
   .brand{display:flex;align-items:center;gap:12px;}
   .brand-mark{font-family:'IBM Plex Sans',sans-serif;font-weight:700;font-size:22px;letter-spacing:1px;background:#fff;color:var(--ink);width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
@@ -227,8 +239,9 @@
   .btn-ghost-dark:disabled{opacity:.4;cursor:default;}
   .btn-ghost-dark:disabled:hover{background:transparent;}
 
-  nav.tabs{display:flex;gap:2px;margin-top:16px;overflow-x:auto;}
+  nav.tabs{display:flex;gap:2px;margin-top:16px;overflow-x:auto;justify-content:center;}
   nav.tabs button{background:transparent;border:none;color:#9A9A9A;padding:10px 18px;font-size:13.5px;font-weight:500;cursor:pointer;border-radius:10px 10px 0 0;white-space:nowrap;font-family:'IBM Plex Sans',sans-serif;border-bottom:3px solid transparent;}
+  nav.tabs button{flex:1 1 0;text-align:center;}
   nav.tabs button:hover{color:#fff;}
   nav.tabs button.active{color:#fff;border-bottom:3px solid var(--accent);}
   nav.tabs .tabs-placeholder{color:#7A7A7A;font-size:12px;padding:10px 4px;font-style:italic;}
@@ -430,9 +443,10 @@
   /* Grid de 3 columnas iguales (1fr auto 1fr): así la columna del medio (la navegación)
      queda centrada respecto al ANCHO TOTAL de la barra, sin importar cuánto ocupen el
      logo (columna 1) o el email/ojo/Salir (columna 3) a los costados. */
-  .module-switch-inner{padding:10px 16px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:16px;}
+  .module-switch-inner{max-width:none;margin:0;padding:10px 20px;display:grid;grid-template-columns:minmax(max-content,1fr) minmax(0,1148px) minmax(max-content,1fr);align-items:center;gap:20px;}
   .module-switch-title{color:#fff;font-family:'IBM Plex Sans',sans-serif;font-weight:600;font-size:13.5px;letter-spacing:.3px;white-space:nowrap;}
-  .module-switch-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+  .module-switch-nav{display:flex;gap:8px;justify-content:center;}
+  .module-switch-nav button{flex:1 1 0;min-width:0;text-align:center;padding:10px 14px !important;font-size:13.5px !important;}
   .module-switch-nav button{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#B8B8B2;padding:8px 16px;border-radius:9px;font-family:'IBM Plex Sans',sans-serif;font-size:12.5px;font-weight:500;cursor:pointer;white-space:nowrap;}
   .module-switch-nav button:hover{color:#fff;border-color:rgba(255,255,255,.4);}
   .module-switch-nav button[draggable="true"]{cursor:grab;}
@@ -444,7 +458,7 @@
   .module-block header.app{position:static;}
   .module-switch-inner .brand{justify-self:start;}
   .module-switch-user{justify-self:end;display:flex;align-items:center;gap:10px;}
-  .module-switch-user .email{color:#B8B8B2;font-size:11.5px;}
+  .module-switch-user .email{display:none;}
 
   @media(max-width:680px){
     header.app{padding:12px 14px 0;}
@@ -454,8 +468,8 @@
     .brand-text span{font-size:9.5px;}
     .toolbar{gap:6px;}
     .btn-ghost-dark{padding:6px 9px;font-size:11px;}
-    nav.tabs{margin-top:12px;}
-    nav.tabs button{padding:9px 13px;font-size:12.5px;}
+    nav.tabs{margin-top:12px;justify-content:flex-start;}
+    nav.tabs button{padding:9px 13px;font-size:12.5px;flex:0 0 auto;}
     main{padding:16px 10px 50px;}
     .section-title{margin:20px 0 10px;}
     .section-title h2{font-size:15px;}
@@ -472,7 +486,8 @@
     .module-switch-nav{justify-content:flex-start;order:3;flex-basis:100%;}
     .module-switch-user{justify-self:auto;margin-left:auto;order:2;}
     .module-switch-title{font-size:12px;}
-    .module-switch-nav button{padding:7px 12px;font-size:11.5px;}
+    .module-switch-nav button{padding:7px 12px !important;font-size:11.5px !important;flex:0 0 auto;}
+    .module-switch-nav{flex-wrap:wrap;}
     .pasivo-progreso-row{flex-direction:column;align-items:stretch;gap:4px;}
     .pasivo-progreso-nombre{flex:0 0 auto;}
   }
@@ -588,11 +603,9 @@
         <div class="brand-text"><h1>Vernier Tacuarembó</h1><span>Financiero</span></div>
       </div>
       <nav class="module-switch-nav" id="moduleSwitchNav">
-        <button draggable="true" data-module="graficos">Gráficos</button>
         <button draggable="true" data-module="inicio" class="active">Panel de Control</button>
-        <button draggable="true" data-module="ventas">Ventas / Compras / Gastos</button>
-        <button draggable="true" data-module="presupuestoanual">Presupuesto Anual</button>
-        <button draggable="true" data-module="flujo">Flujo de Caja</button>
+        <button draggable="true" data-module="ventas">Gestión</button>
+        <button draggable="true" data-module="flujo">Movimientos diarios</button>
         <button draggable="true" data-module="pasivos">🔒 Pasivos</button>
         <button draggable="true" data-module="objetivos">🔒 Objetivos</button>
       </nav>
@@ -671,6 +684,82 @@
         <div class="graf-canvas-wrap" style="height:230px;"><canvas id="ini-histCanvas" role="img" aria-label="Gráfico histórico del indicador elegido"></canvas></div>
         <div id="ini-histHint" class="graf-sub" style="margin:8px 0 0;"></div>
       </div>
+
+      <!-- ---------- Gráficos (antes era una pestaña aparte) ---------- -->
+      <section id="inicio-graficos" class="sec-seccion" style="margin-top:34px;">
+        <div class="section-title ini-title"><h2>Un pantallazo visual del negocio</h2>
+          <div class="ini-periodo-sel"><label for="gr-yearSelect">Año</label><select id="gr-yearSelect"></select></div>
+        </div>
+
+
+      <div class="graf-kpis" id="gr-kpis"></div>
+
+      <div class="graf-grid">
+        <div class="graf-card graf-wide">
+          <h3>Promedios históricos</h3>
+          <p class="graf-sub" id="gr-promSub">Todo el histórico cargado, sin importar el año elegido arriba.</p>
+          <div id="gr-promedios"></div>
+        </div>
+
+        <div class="graf-card graf-wide" id="s-ventas-por-ano">
+          <h3>Ventas</h3>
+          <p class="graf-sub" id="gr-ventasSub"></p>
+          <div class="gr-ctl">
+            <div class="ini-seg" id="gr-ventasVista"><button type="button" data-v="mes" class="on">Mes a mes</button><button type="button" data-v="anio">Por año</button></div>
+            <span class="gr-ctl-mes" id="gr-ventasMesCtl">
+              <label for="gr-ventasAnioSel">Año</label><select id="gr-ventasAnioSel" class="ini-dark-select"></select>
+              <label for="gr-ventasCompSel">Comparar con</label><select id="gr-ventasCompSel" class="ini-dark-select"></select>
+            </span>
+          </div>
+          <div class="graf-legend" id="gr-ventasLegend"></div>
+          <div class="graf-canvas-wrap" style="height:210px;"><canvas id="gr-chartVentas" role="img" aria-label="Barras de ventas: por año o mes a mes, comparando dos años"></canvas></div>
+        </div>
+
+        <div class="graf-card graf-third">
+          <h3>Efectivo vs. crédito</h3>
+          <p class="graf-sub">Composición de la venta del período elegido.</p>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="graf-canvas-wrap" style="height:140px;width:140px;flex:none;"><canvas id="gr-chartEfeCred" role="img" aria-label="Dona de venta en efectivo contra venta a crédito"></canvas></div>
+            <div class="graf-legend" id="gr-legendEfeCred" style="flex-direction:column;align-items:flex-start;margin:0;"></div>
+          </div>
+        </div>
+
+        <div class="graf-card graf-third">
+          <h3>En qué se van los gastos fijos</h3>
+          <p class="graf-sub">Composición del año elegido.</p>
+          <div style="display:flex;align-items:center;gap:16px;">
+            <div class="graf-canvas-wrap" style="height:140px;width:140px;flex:none;"><canvas id="gr-chartGastos" role="img" aria-label="Dona de composición de los gastos fijos"></canvas></div>
+            <div class="graf-legend" id="gr-legendGastos" style="flex-direction:column;align-items:flex-start;margin:0;"></div>
+          </div>
+        </div>
+
+        <div class="graf-card graf-third">
+          <h3>Compras por mes</h3>
+          <p class="graf-sub" id="gr-comprasSub"></p>
+          <div class="graf-legend">
+            <span><i style="background:#8FE0D6;"></i>Pedido inicial</span>
+            <span><i style="background:#FBBF6B;"></i>Reposición</span>
+          </div>
+          <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartCompras" role="img" aria-label="Barras apiladas de compras por mes, pedido inicial y reposición"></canvas></div>
+        </div>
+
+        <div class="graf-card">
+          <h3>Resultado mensual</h3>
+          <p class="graf-sub">Venta − compras − gastos fijos. Verde gana, rojo pierde.</p>
+          <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartResultado" role="img" aria-label="Barras del resultado mensual, verde en ganancia y rojo en pérdida"></canvas></div>
+        </div>
+
+        <div class="graf-card graf-wide">
+          <h3>Contexto general (tendencia)</h3>
+          <p class="graf-sub" id="gr-contextoSub"></p>
+          <div class="graf-legend">
+            <span><i style="background:#4ADE80;"></i>Ventas</span>
+            <span><i style="background:#FF8B66;"></i>Compras + Gastos fijos</span>
+          </div>
+          <div class="graf-canvas-wrap" style="height:210px;"><canvas id="gr-chartContexto" role="img" aria-label="Barras de ventas contra compras más gastos, mes a mes o año a año"></canvas></div>
+        </div>
+      </div>
+      </section>
     </main>
   </div>
 
@@ -690,7 +779,8 @@
         <button data-tab="ventas" draggable="true" class="active">Ventas</button>
         <button data-tab="compras" draggable="true">Compras</button>
         <button data-tab="presupuesto" draggable="true">Gastos</button>
-        <button data-tab="resumen" draggable="true">Panel</button>
+        <button data-tab="presupuestoanual" draggable="true">Presupuesto anual</button>
+        <button data-tab="resumen" draggable="true">Resumen</button>
       </nav>
     </header>
 
@@ -913,6 +1003,46 @@
             </table></div>
           </div>
         </div>
+      </section>
+
+      <section class="panel" id="panel-presupuestoanual">
+      <div class="section-title"><h2>Armar el presupuesto de un año</h2><span class="hint">Gastos fijos — proyectado a partir de un año de referencia</span></div>
+
+      <div class="card">
+        <div class="filters" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;">
+          <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Año de referencia (copio los montos reales de acá)</label><select id="pa-anioRef"></select></div>
+          <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Año a presupuestar</label><select id="pa-anioObj"></select></div>
+          <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">% de ajuste (ej: inflación esperada)</label><input type="number" id="pa-ajustePct" value="0" step="0.1" style="width:110px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;"></div>
+          <button class="btn" id="pa-btnGenerar">Generar presupuesto</button>
+          <button class="btn danger" id="pa-btnReset" title="Borra todo el presupuesto del año a presupuestar, para volver a generarlo desde cero">Resetear presupuesto</button>
+          <button class="btn" id="pa-btnFijar" style="display:none;">🔒 Fijar presupuesto</button>
+        </div>
+        <div id="pa-estado"></div>
+        <p class="hint" style="margin:10px 0 0;font-size:11.5px;color:var(--ink-soft);line-height:1.45;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
+      </div>
+
+      <div class="kpis" id="pa-kpis" style="margin-top:14px;"></div>
+
+      <div class="collapsible open" id="pa-collapsePresupuesto">
+        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuesto por ítem — <span id="pa-anioObjLabel"></span></h3><span class="chev">▾</span></div>
+        <div class="collapsible-body">
+          <div class="gastos-grid"><table>
+            <thead id="pa-tableHead"></thead>
+            <tbody id="pa-tableBody"><tr><td colspan="14" class="empty-row">Elegí un año de referencia y tocá "Generar presupuesto"</td></tr></tbody>
+          </table></div>
+        </div>
+      </div>
+
+      <div class="collapsible open" id="pa-collapseComparativo">
+        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuestado vs. Real — <span id="pa-anioObjLabel2"></span></h3><span class="chev">▾</span></div>
+        <div class="collapsible-body">
+          <p class="hint" style="margin:0 0 10px;font-size:11.5px;color:var(--ink-soft);">Compara cada ítem contra lo presupuestado de los mismos meses que ya tienen gastos reales cargados. Se actualiza solo a medida que cargás Gastos.</p>
+          <div class="table-scroll"><table>
+            <thead><tr><th style="text-align:left;">Ítem</th><th>Presupuestado a la fecha</th><th>Real a la fecha</th><th>Desvío $</th><th>Desvío %</th></tr></thead>
+            <tbody id="pa-comparativoBody"></tbody>
+          </table></div>
+        </div>
+      </div>
       </section>
     </main>
   </div>
@@ -1185,133 +1315,6 @@
     </main>
   </div>
 
-  <div id="module-presupuestoanual" class="module-block">
-    <header class="app">
-      <div class="app-top">
-      </div>
-    </header>
-    <main>
-      <div class="section-title"><h2>Armar el presupuesto de un año</h2><span class="hint">Gastos fijos — proyectado a partir de un año de referencia</span></div>
-
-      <div class="card">
-        <div class="filters" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;">
-          <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Año de referencia (copio los montos reales de acá)</label><select id="pa-anioRef"></select></div>
-          <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">Año a presupuestar</label><select id="pa-anioObj"></select></div>
-          <div><label style="display:block;font-size:11px;color:var(--ink-soft);margin-bottom:4px;">% de ajuste (ej: inflación esperada)</label><input type="number" id="pa-ajustePct" value="0" step="0.1" style="width:110px;padding:8px 10px;border:1px solid var(--line-strong);border-radius:8px;"></div>
-          <button class="btn" id="pa-btnGenerar">Generar presupuesto</button>
-          <button class="btn danger" id="pa-btnReset" title="Borra todo el presupuesto del año a presupuestar, para volver a generarlo desde cero">Resetear presupuesto</button>
-          <button class="btn" id="pa-btnFijar" style="display:none;">🔒 Fijar presupuesto</button>
-        </div>
-        <div id="pa-estado"></div>
-        <p class="hint" style="margin:10px 0 0;font-size:11.5px;color:var(--ink-soft);line-height:1.45;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
-      </div>
-
-      <div class="kpis" id="pa-kpis" style="margin-top:14px;"></div>
-
-      <div class="collapsible open" id="pa-collapsePresupuesto">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuesto por ítem — <span id="pa-anioObjLabel"></span></h3><span class="chev">▾</span></div>
-        <div class="collapsible-body">
-          <div class="gastos-grid"><table>
-            <thead id="pa-tableHead"></thead>
-            <tbody id="pa-tableBody"><tr><td colspan="14" class="empty-row">Elegí un año de referencia y tocá "Generar presupuesto"</td></tr></tbody>
-          </table></div>
-        </div>
-      </div>
-
-      <div class="collapsible open" id="pa-collapseComparativo">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuestado vs. Real — <span id="pa-anioObjLabel2"></span></h3><span class="chev">▾</span></div>
-        <div class="collapsible-body">
-          <p class="hint" style="margin:0 0 10px;font-size:11.5px;color:var(--ink-soft);">Compara cada ítem contra lo presupuestado de los mismos meses que ya tienen gastos reales cargados. Se actualiza solo a medida que cargás Gastos.</p>
-          <div class="table-scroll"><table>
-            <thead><tr><th style="text-align:left;">Ítem</th><th>Presupuestado a la fecha</th><th>Real a la fecha</th><th>Desvío $</th><th>Desvío %</th></tr></thead>
-            <tbody id="pa-comparativoBody"></tbody>
-          </table></div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <div id="module-graficos" class="module-block">
-    <header class="app">
-      <div class="app-top">
-        <div class="toolbar"><div class="year-select"><select id="gr-yearSelect"></select></div></div>
-      </div>
-    </header>
-    <main>
-      <div class="section-title"><h2>Un pantallazo visual del negocio</h2><span class="hint">Ventas, compras y gastos fijos, en gráficos</span></div>
-
-      <div class="graf-kpis" id="gr-kpis"></div>
-
-      <div class="graf-grid">
-        <div class="graf-card graf-wide">
-          <h3>Promedios históricos</h3>
-          <p class="graf-sub" id="gr-promSub">Todo el histórico cargado, sin importar el año elegido arriba.</p>
-          <div id="gr-promedios"></div>
-        </div>
-
-        <div class="graf-card graf-wide">
-          <h3>Ventas por año</h3>
-          <p class="graf-sub">Histórico completo. El año elegido arriba queda resaltado.</p>
-          <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartVentasAnio" role="img" aria-label="Barras de ventas totales por año"></canvas></div>
-        </div>
-
-        <div class="graf-card graf-wide">
-          <h3>Ventas mes a mes: este año vs. el anterior</h3>
-          <p class="graf-sub" id="gr-mesAMesSub"></p>
-          <div class="graf-legend">
-            <span><i style="background:#8FE0D6;"></i><span id="gr-legendAnioActual"></span></span>
-            <span><i style="background:#5A5A55;"></i><span id="gr-legendAnioAnterior"></span></span>
-          </div>
-          <div class="graf-canvas-wrap" style="height:200px;"><canvas id="gr-chartMesAMes" role="img" aria-label="Barras agrupadas de ventas mensuales, año actual contra año anterior"></canvas></div>
-        </div>
-
-        <div class="graf-card">
-          <h3>Efectivo vs. crédito</h3>
-          <p class="graf-sub">Composición de la venta del período elegido.</p>
-          <div style="display:flex;align-items:center;gap:16px;">
-            <div class="graf-canvas-wrap" style="height:140px;width:140px;flex:none;"><canvas id="gr-chartEfeCred" role="img" aria-label="Dona de venta en efectivo contra venta a crédito"></canvas></div>
-            <div class="graf-legend" id="gr-legendEfeCred" style="flex-direction:column;align-items:flex-start;margin:0;"></div>
-          </div>
-        </div>
-
-        <div class="graf-card">
-          <h3>En qué se van los gastos fijos</h3>
-          <p class="graf-sub">Composición del año elegido.</p>
-          <div style="display:flex;align-items:center;gap:16px;">
-            <div class="graf-canvas-wrap" style="height:140px;width:140px;flex:none;"><canvas id="gr-chartGastos" role="img" aria-label="Dona de composición de los gastos fijos"></canvas></div>
-            <div class="graf-legend" id="gr-legendGastos" style="flex-direction:column;align-items:flex-start;margin:0;"></div>
-          </div>
-        </div>
-
-        <div class="graf-card">
-          <h3>Compras por mes</h3>
-          <p class="graf-sub" id="gr-comprasSub"></p>
-          <div class="graf-legend">
-            <span><i style="background:#8FE0D6;"></i>Pedido inicial</span>
-            <span><i style="background:#FBBF6B;"></i>Reposición</span>
-          </div>
-          <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartCompras" role="img" aria-label="Barras apiladas de compras por mes, pedido inicial y reposición"></canvas></div>
-        </div>
-
-        <div class="graf-card">
-          <h3>Resultado mensual</h3>
-          <p class="graf-sub">Venta − compras − gastos fijos. Verde gana, rojo pierde.</p>
-          <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartResultado" role="img" aria-label="Barras del resultado mensual, verde en ganancia y rojo en pérdida"></canvas></div>
-        </div>
-
-        <div class="graf-card graf-wide">
-          <h3>Contexto general (tendencia)</h3>
-          <p class="graf-sub" id="gr-contextoSub"></p>
-          <div class="graf-legend">
-            <span><i style="background:#4ADE80;"></i>Ventas</span>
-            <span><i style="background:#FF8B66;"></i>Compras + Gastos fijos</span>
-          </div>
-          <div class="graf-canvas-wrap" style="height:210px;"><canvas id="gr-chartContexto" role="img" aria-label="Barras de ventas contra compras más gastos, mes a mes o año a año"></canvas></div>
-        </div>
-      </div>
-    </main>
-  </div>
-
   <!-- ---------- ASISTENTE (botón flotante) ---------- -->
   <button type="button" class="as-fab" id="asFab" title="Asistente: preguntas sobre el negocio" aria-label="Abrir el asistente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg></button>
   <div class="as-panel" id="asPanel" role="dialog" aria-label="Asistente">
@@ -1545,6 +1548,7 @@
       document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b===btn));
       document.querySelectorAll('#module-ventas section.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+btn.dataset.tab));
       if(btn.dataset.tab === 'resumen') renderResumenPanel();
+      if(btn.dataset.tab === 'presupuestoanual') renderPresupuestoAnual();
     });
     enableTabDragReorder('tabs', 'tab',
       ()=>Array.from(document.querySelectorAll('#tabs button[data-tab]')).map(b=>b.dataset.tab),
@@ -1746,7 +1750,14 @@
     // Selector de mes de las tarjetas de arriba: actualiza las tarjetas y lleva el Punto de
     // equilibrio al mismo mes/año, para que todo el panel muestre el mismo período.
     function iniSyncPeConTarjetas(){
-      state.iniPeAnio = state.iniAnio; state.iniPeMes = state.iniMes;
+      state.iniPeAnio = state.iniAnio;
+      if(state.iniMes==='TODOS'){
+        if(state.iniPeVista!=='anual'){ state.iniPeVistaPrevia = state.iniPeVista || 'mensual'; state.iniPeVista = 'anual'; }
+      } else {
+        state.iniPeMes = state.iniMes;
+        if(state.iniPeVistaPrevia){ state.iniPeVista = state.iniPeVistaPrevia; state.iniPeVistaPrevia = null; }
+      }
+      document.querySelectorAll('#ini-peVistaFiltros button[data-pe-vista]').forEach(b=>b.classList.toggle('on', b.dataset.peVista===(state.iniPeVista||'mensual')));
       const peAnio = document.getElementById('ini-peAnioSelect'); if(peAnio) peAnio.value = String(state.iniAnio);
       iniFillPeMeses(state.iniData);
       renderPuntoEquilibrio();
@@ -2102,6 +2113,16 @@
     const margen = venta ? utilidad/venta : 0;
     return { venta, compra, gasto:g.fijo, sueldo:g.sueldo, deuda:g.deuda, utilidad, margen, utilidadNeta: utilidad - g.sueldo, tieneDatos: venta>0 };
   }
+  // Todo el año: suma de los 12 meses (mismos criterios que cada mes; el margen se calcula sobre la venta del año).
+  function iniValoresAnio(data, anio){
+    const t = { venta:0, compra:0, gasto:0, sueldo:0, deuda:0 };
+    MESES.forEach(m=>{ const x = iniValoresPeriodo(data, anio, m); t.venta+=x.venta; t.compra+=x.compra; t.gasto+=x.gasto; t.sueldo+=x.sueldo||0; t.deuda+=x.deuda||0; });
+    t.utilidad = t.venta - t.compra - t.gasto;
+    t.margen = t.venta ? t.utilidad/t.venta : 0;
+    t.utilidadNeta = t.utilidad - t.sueldo;
+    t.tieneDatos = t.venta>0;
+    return t;
+  }
   function iniHoy(){ const d=new Date(); return { anio:d.getFullYear(), mes:MESES[d.getMonth()] }; }
 
   // Caja de una cuenta al cierre de un mes: toma el último saldo inicial cargado HASTA ese mes
@@ -2169,8 +2190,8 @@
   function iniFillMesesTarjetas(data){
     const mesSel = document.getElementById('ini-mesSelect');
     const meses = iniMesesConVenta(data, state.iniAnio);
-    if(!state.iniMes || !meses.includes(state.iniMes)) state.iniMes = meses.length ? meses[meses.length-1] : null;
-    if(mesSel) mesSel.innerHTML = meses.map(m=>`<option value="${m}" ${m===state.iniMes?'selected':''}>${capitalize(m)}</option>`).join('');
+    if(state.iniMes!=='TODOS' && (!state.iniMes || !meses.includes(state.iniMes))) state.iniMes = meses.length ? meses[meses.length-1] : null;
+    if(mesSel) mesSel.innerHTML = `<option value="TODOS" ${state.iniMes==='TODOS'?'selected':''}>Todos</option>` + meses.map(m=>`<option value="${m}" ${m===state.iniMes?'selected':''}>${capitalize(m)}</option>`).join('');
   }
 
   function renderInicioKpis(data){
@@ -2178,13 +2199,14 @@
     if(!data) return;
     const hoy = iniHoy();
     const anio = state.iniAnio, mes = state.iniMes;
-    const v = mes ? iniValoresPeriodo(data, anio, mes) : { venta:0, utilidad:0, margen:0, utilidadNeta:0 };
-    const esMesActual = mes && anio===hoy.anio && mes===hoy.mes;
+    const todos = mes==='TODOS';
+    const v = todos ? iniValoresAnio(data, anio) : (mes ? iniValoresPeriodo(data, anio, mes) : { venta:0, utilidad:0, margen:0, utilidadNeta:0 });
+    const esMesActual = !todos && mes && anio===hoy.anio && mes===hoy.mes;
     // Caja: si el mes elegido es el actual, es la caja "a hoy"; si es otro mes, la caja al cierre de ese mes.
     // La caja SIEMPRE es la de hoy (foto del momento), sin importar el mes elegido: incluye todo lo
     // cargado hasta el mes actual y nada de meses futuros. El cierre de meses anteriores se ve en el Histórico.
     const caja = iniCajaTotalAl(data, hoy.anio, hoy.mes);
-    const mesLbl = mes ? `${capitalize(mes)} ${anio}` : 'del mes';
+    const mesLbl = todos ? `${anio} (todo el año)` : (mes ? `${capitalize(mes)} ${anio}` : 'del mes');
     const cajaLbl = 'Caja disponible hoy';
 
     document.getElementById('ini-kpiRow').innerHTML = `
@@ -5171,25 +5193,15 @@
   // Un botón chico arriba de cada pestaña abre una tarjeta con la función de la pestaña y lo que hay adentro.
   // Se abre sola la primera vez que entrás a cada pestaña; después queda cerrada (se abre cuando querés).
   const GUIAS = {
-    graficos: {
-      sirve: 'Ver el negocio de un pantallazo, en gráficos, para detectar tendencias sin tener que leer tablas.',
-      items: ['Promedios históricos: venta, compra y costo fijo, anual y mensual', 'Ventas por año y mes a mes contra el año anterior', 'Cómo se reparten las ventas (efectivo/crédito) y los gastos fijos', 'Compras por mes, resultado mensual y contexto general'],
-      tip: 'El selector de año de arriba cambia casi todos los gráficos. Pasá el mouse por una barra del resultado mensual para ver qué gastos suma.'
-    },
     inicio: {
-      sirve: 'Saber cómo está hoy el negocio de un vistazo: cuánta plata hay, cómo vino el mes y si se cubren los gastos.',
-      items: ['Caja disponible hoy (suma de todas las cuentas), venta, utilidad y margen del mes elegido', 'Punto de equilibrio: cuánto hay que vender para cubrir el costo fijo', 'Histórico de caja, venta, utilidad y margen', 'Rentabilidad y si se puede retirar o subir el sueldo'],
-      tip: 'La caja siempre es la de hoy; el selector de mes cambia venta, utilidad y margen.'
+      sirve: 'Saber cómo está hoy el negocio de un vistazo (cuánta plata hay, cómo vino el mes y si se cubren los gastos) y, más abajo, verlo en gráficos para detectar tendencias.',
+      items: ['Caja disponible hoy (suma de todas las cuentas), venta, utilidad y margen del mes elegido', 'Punto de equilibrio: cuánto hay que vender para cubrir el costo fijo', 'Histórico de caja, venta, utilidad y margen', 'Rentabilidad y si se puede retirar o subir el sueldo', 'Más abajo, los gráficos: promedios históricos, ventas (por año o mes a mes, comparando años), efectivo/crédito, gastos fijos por categoría, compras, resultado mensual y contexto general'],
+      tip: 'La caja siempre es la de hoy; el selector de mes cambia venta, utilidad y margen. El selector de año de la sección de gráficos es independiente.'
     },
     ventas: {
-      sirve: 'Es donde se carga lo que pasa mes a mes: ventas, compras y gastos. Todo lo demás del dashboard se calcula desde acá.',
-      items: ['Ventas: efectivo y crédito por mes', 'Compras: pedido inicial, reposición y facturas de proveedores', 'Gastos: ítems fijos, sueldos, intereses y pagos a proveedor', 'Panel: resumen del año, IVA y cuánto te pasás de costos'],
+      sirve: 'Es donde se gestiona lo que pasa mes a mes (ventas, compras y gastos) y donde se planifica el año con el presupuesto. Todo lo demás del dashboard se calcula desde acá.',
+      items: ['Ventas: efectivo y crédito por mes', 'Compras: pedido inicial, reposición y facturas de proveedores', 'Gastos: ítems fijos, sueldos, intereses y pagos a proveedor', 'Presupuesto anual: armar el presupuesto del año con un ajuste y compararlo con lo real ("Fijar presupuesto" lo deja congelado)', 'Resumen: resumen del año, IVA y cuánto te pasás de costos'],
       tip: 'Marcá cada gasto con su tipo (Normal, Sueldo, Interés o Compra): de eso dependen el punto de equilibrio, el semáforo y los resultados.'
-    },
-    presupuestoanual: {
-      sirve: 'Planificar los gastos del año: partís de un año anterior, le aplicás un porcentaje de ajuste (inflación) y lo comparás con lo que realmente gastás.',
-      items: ['Presupuesto proyectado por ítem y por mes', 'Diferencia contra lo real mes a mes', '"Fijar presupuesto": deja el del año congelado para medirte contra él'],
-      tip: 'Fijá el presupuesto una vez que lo dejaste como querés, así no se mueve aunque cambies datos.'
     },
     flujo: {
       sirve: 'Controlar la plata que realmente entra y sale, cuenta por cuenta (bancos, efectivo, cheques), y saber cuánta tenés en cada una.',
@@ -5641,6 +5653,51 @@
     }, extra||{});
   }
 
+  // ---- Tarjeta "Ventas": vista 'mes' (mes a mes, comparando dos años) o 'anio' (todos los años) ----
+  let grVentasCtx = null;
+  const grVentasUI = { vista:'mes', base:null, anio:null, comp:null };
+  function grVentasMeses(ventasTodas, anio){
+    return MESES.map(mes=>{ const r=(ventasTodas||[]).find(x=>x.anio===anio&&x.mes===mes); return r?(r.efectivo||0)+(r.credito||0):0; });
+  }
+  function grRenderVentas(){
+    const c = grVentasCtx; if(!c || !document.getElementById('gr-chartVentas')) return;
+    const u = grVentasUI, esMes = u.vista==='mes';
+    if(u.comp!=null && !c.anios.includes(u.comp)) u.comp = null;
+    document.querySelectorAll('#gr-ventasVista button').forEach(b=>b.classList.toggle('on', b.dataset.v===u.vista));
+    document.getElementById('gr-ventasMesCtl').style.display = esMes ? '' : 'none';
+    const aniosDesc = c.anios.slice().reverse();
+    const selA = document.getElementById('gr-ventasAnioSel'), selC = document.getElementById('gr-ventasCompSel');
+    selA.innerHTML = aniosDesc.map(a=>`<option value="${a}" ${a===u.anio?'selected':''}>${a}</option>`).join('');
+    selC.innerHTML = `<option value="NONE" ${u.comp==null?'selected':''}>Sin comparar</option>` + aniosDesc.filter(a=>a!==u.anio).map(a=>`<option value="${a}" ${a===u.comp?'selected':''}>${a}</option>`).join('');
+    const yTicks = { color:'#B8B8B2', font:{size:10.5}, maxTicksLimit:5, callback:v=>grHidden()?'•••':'$'+fmt(v) };
+    const xTicks = { color:'#B8B8B2', font:{size:10.5} };
+    const opts = grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:xTicks }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:yTicks } } });
+    let data;
+    if(esMes){
+      const ds = [{ label:String(u.anio), data: grVentasMeses(c.ventasTodas, u.anio), backgroundColor: GR_COLORS.teal, borderRadius:3, maxBarThickness:u.comp==null?22:11 }];
+      if(u.comp!=null) ds.push({ label:String(u.comp), data: grVentasMeses(c.ventasTodas, u.comp), backgroundColor: GR_COLORS.grayDim, borderRadius:3, maxBarThickness:11 });
+      data = { labels: MESES_CORTO, datasets: ds };
+      document.getElementById('gr-ventasSub').textContent = u.comp==null ? `Ventas de ${u.anio}, mes a mes` : `${u.anio} contra ${u.comp}, mes a mes`;
+      document.getElementById('gr-ventasLegend').innerHTML = `<span><i style="background:${GR_COLORS.teal};"></i>${u.anio}</span>` + (u.comp!=null ? `<span><i style="background:${GR_COLORS.grayDim};"></i>${u.comp}</span>` : '');
+    } else {
+      data = { labels: c.anios, datasets:[{ data: c.ventasPorAnio, backgroundColor: c.anios.map(a=>a===u.anio?GR_COLORS.teal:GR_COLORS.grayDim), borderRadius:4, maxBarThickness:26 }] };
+      document.getElementById('gr-ventasSub').textContent = 'Total vendido en cada año del histórico. El año elegido arriba queda resaltado.';
+      document.getElementById('gr-ventasLegend').innerHTML = '';
+    }
+    grDestroy('gr-chartVentas');
+    grCharts['gr-chartVentas'] = new Chart(document.getElementById('gr-chartVentas'), { type:'bar', data, options: opts });
+  }
+  function grInitVentasCtl(){
+    const v = document.getElementById('gr-ventasVista'); if(!v || v.dataset.ok) return; v.dataset.ok = '1';
+    v.addEventListener('click', ev=>{ const b = ev.target.closest('button[data-v]'); if(!b) return; grVentasUI.vista = b.dataset.v; grRenderVentas(); });
+    document.getElementById('gr-ventasAnioSel').addEventListener('change', ev=>{
+      grVentasUI.anio = parseInt(ev.target.value,10);
+      if(grVentasUI.comp===grVentasUI.anio) grVentasUI.comp = grVentasUI.anio-1;
+      grRenderVentas();
+    });
+    document.getElementById('gr-ventasCompSel').addEventListener('change', ev=>{ grVentasUI.comp = ev.target.value==='NONE' ? null : parseInt(ev.target.value,10); grRenderVentas(); });
+  }
+
   function grRenderPromedios(ventasTodas, comprasTodas, gastosTodos){
     const cont = document.getElementById('gr-promedios');
     if(!cont) return;
@@ -5800,31 +5857,13 @@
     //  - Promedio mensual: todos los meses que tienen ese dato cargado (incluye el año en curso).
     grRenderPromedios(ventasTodas, comprasTodas, presFiltradoTodos);
 
-    document.getElementById('gr-mesAMesSub').textContent = esTodos
-      ? `${anioEfectivo} contra ${anioAnterior} — año más reciente (no se puede combinar todos los años en una grilla de 12 meses)`
-      : `${anioEfectivo} contra ${anioAnterior}`;
-    document.getElementById('gr-legendAnioActual').textContent = String(anioEfectivo);
-    document.getElementById('gr-legendAnioAnterior').textContent = String(anioAnterior);
     document.getElementById('gr-comprasSub').textContent = esTodos ? `Año ${anioEfectivo} (más reciente)` : `Año ${anioEfectivo}`;
 
-    // 1) Ventas por año
-    grDestroy('gr-chartVentasAnio');
-    grCharts['gr-chartVentasAnio'] = new Chart(document.getElementById('gr-chartVentasAnio'), {
-      type:'bar',
-      data:{ labels: anios, datasets:[{ data: ventasPorAnio, backgroundColor: anios.map(a=>a===anioEfectivo?GR_COLORS.teal:GR_COLORS.grayDim), borderRadius:4, maxBarThickness:26 }] },
-      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>grHidden()?'•••':'$'+fmt(v)} } } })
-    });
-
-    // 2) Ventas mes a mes vs año anterior
-    grDestroy('gr-chartMesAMes');
-    grCharts['gr-chartMesAMes'] = new Chart(document.getElementById('gr-chartMesAMes'), {
-      type:'bar',
-      data:{ labels: MESES_CORTO, datasets:[
-        { label:String(anioEfectivo), data: ventasAnioActual, backgroundColor: GR_COLORS.teal, borderRadius:3, maxBarThickness:11 },
-        { label:String(anioAnterior), data: ventasAnioAnt, backgroundColor: GR_COLORS.grayDim, borderRadius:3, maxBarThickness:11 }
-      ] },
-      options: grBaseOpts({ scales:{ x:{ grid:{display:false}, border:{color:'#3A3A38'}, ticks:{color:'#B8B8B2',font:{size:10.5}} }, y:{ grid:{color:'#242422'}, border:{display:false}, ticks:{color:'#B8B8B2',font:{size:10.5},maxTicksLimit:5, callback:v=>grHidden()?'•••':fmt(v)} } } })
-    });
+    // 1) Ventas (por año o mes a mes, con selectores)
+    grVentasCtx = { anios, ventasPorAnio, ventasTodas, anioEfectivo };
+    if(grVentasUI.base !== anioEfectivo){ grVentasUI.base = anioEfectivo; grVentasUI.anio = anioEfectivo; grVentasUI.comp = anioEfectivo - 1; }
+    grInitVentasCtl();
+    grRenderVentas();
 
     // 3) Efectivo vs crédito
     grDestroy('gr-chartEfeCred');
@@ -6019,7 +6058,7 @@
       if(cfg.anioRef){ state.paAnioRef = cfg.anioRef; const sr=document.getElementById('pa-anioRef'); if(sr) sr.value = String(cfg.anioRef); }
       document.getElementById('pa-ajustePct').value = cfg.ajustePct;
     }
-    document.getElementById('module-presupuestoanual').classList.toggle('pa-fijado', fijado);
+    const paPan = document.getElementById('panel-presupuestoanual'); if(paPan) paPan.classList.toggle('pa-fijado', fijado);
     ['pa-anioRef','pa-ajustePct','pa-btnGenerar','pa-btnReset'].forEach(id=>{ const el=document.getElementById(id); if(el) el.disabled = fijado; });
     const tienePresupuesto = paCategorias(proyRows).length > 0;
     document.getElementById('pa-btnFijar').style.display = (!fijado && tienePresupuesto) ? '' : 'none';
@@ -6100,13 +6139,19 @@
   // arrastrar. El orden se guarda en item_orden (contexto 'secciones', cuenta = grupo), así se
   // mantiene igual en la PC y en el celular. También queda una copia en el navegador.
   function secSlug(t){ return (t||'').toString().normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,40); }
+  const SEC_SEL = '.collapsible, .graf-card, .sec-seccion';
+  function secHead(el){
+    if(el.classList.contains('graf-card')) return el.querySelector('h3');
+    if(el.classList.contains('sec-seccion')) return el.querySelector(':scope > .section-title h2');
+    return el.querySelector(':scope > .collapsible-head h3');
+  }
   function secTitulo(el){
-    const h = el.classList.contains('graf-card') ? el.querySelector('h3') : el.querySelector(':scope > .collapsible-head h3');
+    const h = secHead(el);
     if(!h) return '';
     return Array.from(h.childNodes).filter(n=>!(n.nodeType===1 && n.classList.contains('sec-move'))).map(n=>n.textContent).join('').trim();
   }
   function secBloques(parent){
-    return Array.from(parent.children).filter(c=>c.matches('.collapsible, .graf-card') && c.dataset.secId);
+    return Array.from(parent.children).filter(c=>c.matches(SEC_SEL) && c.dataset.secId && !c.classList.contains('sec-oculta'));
   }
   function secGrupoKey(parent){
     if(parent.id) return parent.id;
@@ -6143,26 +6188,105 @@
     bloque.scrollIntoView({ block:'nearest', behavior:'smooth' });
   }
 
+  // ---------- OCULTAR / MOSTRAR SECCIONES (con PIN) ----------
+  // La ✕ de cada bloque lo saca del panel (no borra datos: solo deja de mostrarlo). Se pide el PIN para ocultar
+  // y para volver a mostrar. Se guarda en item_orden (contexto 'secciones_ocultas', categoria = grupo::bloque).
+  function secKey(el){ return (el.parentElement.dataset.secGrupo||'') + '::' + el.dataset.secId; }
+  function secLeerOcultasLocal(){ try{ return JSON.parse(localStorage.getItem('vt_secciones_ocultas')||'[]'); }catch(e){ return []; } }
+  function secGuardarOcultasLocal(arr){ try{ localStorage.setItem('vt_secciones_ocultas', JSON.stringify(arr)); }catch(e){} }
+  function secTodosBloques(){ return Array.from(document.querySelectorAll('.module-block [data-sec-id]')); }
+  function secAplicarOcultas(keys){
+    const set = new Set(keys);
+    secTodosBloques().forEach(el=>el.classList.toggle('sec-oculta', set.has(secKey(el))));
+    secActualizarPies();
+    window.dispatchEvent(new Event('resize'));
+  }
+  function secOcultasActuales(){ return secTodosBloques().filter(el=>el.classList.contains('sec-oculta')).map(secKey); }
+  function secActualizarPies(){
+    document.querySelectorAll('.sec-pie').forEach(pie=>{
+      const mod = pie.closest('.module-block');
+      const n = mod ? mod.querySelectorAll('.sec-oculta').length : 0;
+      pie.style.display = n ? '' : 'none';
+      const b = pie.querySelector('button'); if(b) b.textContent = `Secciones ocultas (${n}) · Mostrar`;
+    });
+  }
+  async function secOcultar(el){
+    const titulo = secTitulo(el) || 'esta sección';
+    if(!(await pedirAccesoModulo('ocultar'))) return;
+    el.classList.add('sec-oculta');
+    const key = secKey(el);
+    const arr = secLeerOcultasLocal(); if(!arr.includes(key)) arr.push(key); secGuardarOcultasLocal(arr);
+    secActualizarPies();
+    const { error } = await sb.from('item_orden').upsert([{ contexto:'secciones_ocultas', cuenta:'', categoria:key, orden:0 }], { onConflict:'contexto,cuenta,categoria' });
+    showToast(error ? 'Se ocultó, pero no pude guardarlo en la nube: '+error.message : `"${titulo}" oculta. La recuperás abajo, en "Secciones ocultas".`, !!error);
+  }
+  async function secMostrarUna(el){
+    el.classList.remove('sec-oculta');
+    const key = secKey(el);
+    secGuardarOcultasLocal(secLeerOcultasLocal().filter(k=>k!==key));
+    secActualizarPies();
+    window.dispatchEvent(new Event('resize'));
+    await sb.from('item_orden').delete().eq('contexto','secciones_ocultas').eq('cuenta','').eq('categoria', key);
+  }
+  async function secAbrirOcultas(mod){
+    if(!(await pedirAccesoModulo('mostrar'))) return;
+    const overlay = document.createElement('div'); overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal-box" style="max-width:420px;"><h2>Secciones ocultas</h2><p class="hint" style="margin:4px 0 12px;font-size:12.5px;color:var(--ink-soft);">Tocá "Mostrar" para volver a ponerla en el panel.</p><div id="secOcList"></div><div style="text-align:right;margin-top:12px;"><button type="button" class="btn ghost" id="secOcCerrar">Cerrar</button></div></div>`;
+    document.body.appendChild(overlay);
+    const lista = overlay.querySelector('#secOcList');
+    const pintar = ()=>{
+      const ocultas = Array.from(mod.querySelectorAll('.sec-oculta'));
+      if(!ocultas.length){ overlay.remove(); return; }
+      lista.innerHTML = '';
+      ocultas.forEach(el=>{
+        const f = document.createElement('div'); f.style.cssText = 'display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);';
+        f.innerHTML = `<span style="font-size:13px;font-weight:500;">${escapeHtml(secTitulo(el)||el.dataset.secId)}</span><button type="button" class="btn">Mostrar</button>`;
+        f.querySelector('button').addEventListener('click', async ()=>{ await secMostrarUna(el); pintar(); });
+        lista.appendChild(f);
+      });
+    };
+    pintar();
+    overlay.querySelector('#secOcCerrar').addEventListener('click', ()=>overlay.remove());
+    overlay.addEventListener('click', ev=>{ if(ev.target===overlay) overlay.remove(); });
+  }
+  function secInitOcultas(){
+    document.querySelectorAll('.module-block').forEach(mod=>{
+      if(!mod.querySelector('[data-sec-id]') || mod.querySelector('.sec-pie')) return;
+      const mains = mod.querySelectorAll('main'); const main = mains[mains.length-1]; if(!main) return;
+      const pie = document.createElement('div'); pie.className = 'sec-pie'; pie.style.display = 'none';
+      pie.innerHTML = '<button type="button"></button>';
+      pie.querySelector('button').addEventListener('click', ()=>secAbrirOcultas(mod));
+      main.appendChild(pie);
+    });
+    secAplicarOcultas(secLeerOcultasLocal());
+    sb.from('item_orden').select('categoria').eq('contexto','secciones_ocultas').eq('cuenta','').then(({ data, error })=>{
+      if(error || !data) return;
+      const keys = data.map(r=>r.categoria);
+      secGuardarOcultasLocal(keys); secAplicarOcultas(keys);
+    });
+  }
+
   let secArrastrando = null;
   function initSecciones(){
     const grupos = new Set();
-    document.querySelectorAll('.module-block .collapsible, .module-block .graf-card').forEach(el=>{
+    document.querySelectorAll('.module-block .collapsible, .module-block .graf-card, .module-block .sec-seccion').forEach(el=>{
       const parent = el.parentElement;
-      const hermanos = Array.from(parent.children).filter(c=>c.matches('.collapsible, .graf-card'));
+      const hermanos = Array.from(parent.children).filter(c=>c.matches(SEC_SEL));
       if(hermanos.length < 2) return;
       const titulo = secTitulo(el);
       el.dataset.secId = el.id || ('s-' + secSlug(titulo || String(hermanos.indexOf(el))));
       parent.dataset.secGrupo = secGrupoKey(parent);
       grupos.add(parent);
-      const h = el.classList.contains('graf-card') ? el.querySelector('h3') : el.querySelector(':scope > .collapsible-head h3');
+      const h = secHead(el);
       if(!h || h.querySelector('.sec-move')) return;
       const ctr = document.createElement('span');
       ctr.className = 'sec-move';
-      ctr.innerHTML = `<span class="sec-drag" draggable="true" title="Arrastrá para mover este bloque">⋮⋮</span><button type="button" data-dir="-1" title="Subir este bloque">↑</button><button type="button" data-dir="1" title="Bajar este bloque">↓</button>`;
+      ctr.innerHTML = `<span class="sec-drag" draggable="true" title="Arrastrá para mover este bloque">⋮⋮</span><button type="button" data-dir="-1" title="Mover hacia arriba / la izquierda"><span class="ar-v">↑</span><span class="ar-h">←</span></button><button type="button" data-dir="1" title="Mover hacia abajo / la derecha"><span class="ar-v">↓</span><span class="ar-h">→</span></button><button type="button" data-ocultar="1" title="Ocultar esta sección del panel (pide el PIN)">✕</button>`;
       ctr.addEventListener('click', ev=>{
         ev.stopPropagation();
         const b = ev.target.closest('button[data-dir]');
-        if(b) secMover(el, parseInt(b.dataset.dir,10));
+        if(b){ secMover(el, parseInt(b.dataset.dir,10)); return; }
+        if(ev.target.closest('button[data-ocultar]')) secOcultar(el);
       });
       const asa = ctr.querySelector('.sec-drag');
       asa.addEventListener('dragstart', ev=>{ secArrastrando = el; el.classList.add('sec-dragging'); ev.dataTransfer.effectAllowed='move'; try{ ev.dataTransfer.setData('text/plain', el.dataset.secId); }catch(e){} });
@@ -6171,7 +6295,8 @@
         if(!secArrastrando || secArrastrando===el || secArrastrando.parentElement!==el.parentElement) return;
         ev.preventDefault();
         const r = el.getBoundingClientRect();
-        const antes = (ev.clientY - r.top) < r.height/2;
+        const lado = el.classList.contains('graf-third') && secArrastrando.classList.contains('graf-third') && window.innerWidth>=1000;
+        const antes = lado ? (ev.clientX - r.left) < r.width/2 : (ev.clientY - r.top) < r.height/2;
         el.parentElement.insertBefore(secArrastrando, antes ? el : el.nextSibling);
       });
       h.appendChild(ctr);
@@ -6186,6 +6311,7 @@
       grupos.forEach(g=>{ const ids = porGrupo[g.dataset.secGrupo]; if(ids){ secAplicarOrden(g, ids); local[g.dataset.secGrupo] = ids; } });
       secGuardarLocal(local);
     });
+    secInitOcultas();
   }
 
   // ---------- CANDADO (Pasivos, Objetivos y asistente) ----------
@@ -6195,6 +6321,8 @@
   const MODULOS_BLOQUEADOS = {
     pasivos:   { nombre:'Pasivos',   titulo:'Pasivos protegido',   txt:'Ingresá tu PIN para ver tus deudas.' },
     objetivos: { nombre:'Objetivos', titulo:'Objetivos protegido', txt:'Ingresá tu PIN para ver tus objetivos y análisis.' },
+    ocultar:   { nombre:'Ocultar',   titulo:'Ocultar sección',     txt:'Ingresá tu PIN para ocultar esta sección del panel.' },
+    mostrar:   { nombre:'Mostrar',   titulo:'Secciones ocultas',   txt:'Ingresá tu PIN para ver las secciones ocultas.' },
   };
   const modulosAbiertos = {};
   function lockActualizarBotones(){
@@ -6321,9 +6449,9 @@
     document.querySelectorAll('.module-switch-nav button').forEach(b=>b.classList.toggle('active', b.dataset.module===name));
     document.querySelectorAll('.module-block').forEach(m=>m.classList.toggle('active', m.id==='module-'+name));
     guiaAutoAbrir(name);
-    if(name==='graficos') renderGraficos();
-    if(name==='presupuestoanual') renderPresupuestoAnual();
+    if(name==='ventas' && document.getElementById('panel-presupuestoanual').classList.contains('active')) renderPresupuestoAnual();
     // El Panel y Objetivos leen todo de nuevo al entrar, para no mostrar datos viejos tras editar en otras pestañas.
+    if(name==='inicio') renderGraficos();
     if(name==='inicio' || name==='objetivos') loadInicio();
   }
 
