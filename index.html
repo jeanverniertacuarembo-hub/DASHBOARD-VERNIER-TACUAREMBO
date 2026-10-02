@@ -453,6 +453,21 @@
   .module-switch-nav button.dragging{opacity:.4;}
   .module-switch-nav button.drag-over{box-shadow:inset 3px 0 0 var(--accent);}
   .module-switch-nav button.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600;}
+
+  /* ---------- Navegación fluida (opción 4) ---------- */
+  html{scroll-behavior:smooth;}
+  .module-block.active{animation:modIn .28s ease;}
+  @keyframes modIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .module-switch,.module-switch-inner,.module-switch-nav button,.brand-mark,.brand-text{transition:padding .2s ease,font-size .2s ease,width .2s ease,height .2s ease,opacity .2s ease;}
+  header.app{top:var(--hdr-h,60px);}
+  body.hdr-compacto .module-switch-inner{padding-top:4px;padding-bottom:4px;}
+  body.hdr-compacto .module-switch-nav button{padding:5px 12px !important;font-size:12.5px !important;}
+  body.hdr-compacto .module-switch .brand-mark{width:26px;height:26px;font-size:15px;}
+  body.hdr-compacto .module-switch .brand-text span{display:none;}
+  body.hdr-compacto .module-switch .brand-text h1{font-size:13px;}
+  .ir-arriba{position:fixed;left:18px;bottom:18px;width:42px;height:42px;border-radius:50%;border:none;background:#0A0A0A;color:#8FE0D6;font-size:20px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.25);opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .2s ease,transform .2s ease;z-index:90;}
+  .ir-arriba.ver{opacity:1;pointer-events:auto;transform:none;}
+  @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto;}.module-block.active,section.panel.active{animation:none;}.ir-arriba{transition:none;}}
   .module-block{display:none;}
   .module-block.active{display:block;}
   .module-block header.app{position:static;}
@@ -496,6 +511,7 @@
   .toast.err{background:var(--bad);}
 
 
+  #pinForm input::placeholder{letter-spacing:0;font-size:14px;}
   .hist-pie{text-align:center;margin:6px 0 26px;}
   .hist-pie button{background:none;border:none;color:var(--ink-soft);font-size:11.5px;cursor:pointer;opacity:.7;font-family:'IBM Plex Sans',sans-serif;padding:4px 10px;}
   .hist-pie button.resp-aviso{color:var(--bad);opacity:1;font-weight:600;}
@@ -544,6 +560,50 @@
   .formrow input, .formrow select{font-family:'IBM Plex Sans',sans-serif;font-variant-numeric:tabular-nums;font-size:13px;height:34px;padding:0 10px;background:var(--paper-2);border:1px solid var(--line);border-radius:8px;}
   .formrow input:hover, .formrow select:hover{border-color:var(--line-strong);}
   .formrow input:focus, .formrow select:focus{background:#fff;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft);outline:none;}
+
+  /* ===== REDISEÑO (prueba): más aire, jerarquía y subpestañas claras. Gráficos sin cambios. ===== */
+  main{padding-top:30px;}
+  .section-title{margin:40px 0 16px;}
+  .section-title h2{font-size:24px;font-weight:700;letter-spacing:-.3px;}
+  section.panel > .section-title:first-child{margin-top:8px;}
+  .section-title .hint{font-size:12px;}
+  .card,.collapsible,.kpi{border-color:#E8E8E3;border-radius:14px;}
+  .collapsible{margin-top:12px;margin-bottom:12px;}
+  .collapsible-head{padding:16px 18px;}
+  .kpis{gap:14px;}
+  .kpi{padding:16px 15px;}
+  /* barra de subpestañas: clara, con subrayado */
+  .module-block header.app{background:var(--paper-2);color:var(--ink);padding-top:12px;border-bottom:1px solid #E3E3DE;}
+  .module-block header.app .btn-ghost-dark{color:var(--ink);border-color:var(--line-strong);background:#fff;}
+  .module-block header.app .btn-ghost-dark:hover{background:#EFEFEA;}
+  .module-block header.app .year-select select{background:#fff;color:var(--ink);border-color:var(--line-strong);}
+  .module-block header.app .year-select select option{background:#fff;color:var(--ink);}
+  .module-block header.app nav.tabs{margin-top:8px;}
+  .module-block header.app nav.tabs button{color:#8A8A85;border-bottom:3px solid transparent;border-radius:0;}
+  .module-block header.app nav.tabs button:hover{color:var(--ink);}
+  .module-block header.app nav.tabs button.active{color:var(--ink);font-weight:700;border-bottom:3px solid var(--ink);}
+  .module-block header.app nav.tabs button[id^="btnAdd"]{border:1px dashed var(--line-strong) !important;border-radius:9px;margin-bottom:4px;}
+  .module-block header.app nav.tabs .tabs-placeholder{color:#8A8A85;}
+
+  @media(max-width:680px){
+    main{padding:18px 14px 40px;}
+    .section-title{margin:30px 0 12px;}
+    .section-title h2{font-size:21px;}
+    .collapsible-head{padding:14px 15px;}
+    .kpis{gap:10px;}
+    body{padding-bottom:74px;}
+    /* barra de módulos fija abajo (app) */
+    .module-switch-nav{position:fixed;left:0;right:0;bottom:0;z-index:120;background:var(--ink);display:flex !important;flex-wrap:nowrap !important;justify-content:space-around;gap:0;padding:6px 4px calc(8px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.14);order:initial;flex-basis:auto;}
+    .module-switch-nav button{flex:1 1 0 !important;min-width:0;background:transparent !important;border:none !important;border-radius:0;color:#9A9A95 !important;font-size:10.5px !important;line-height:1.2;padding:8px 2px 6px !important;white-space:normal !important;position:relative;box-shadow:none !important;}
+    .module-switch-nav button.active{color:var(--accent) !important;font-weight:700;}
+    .module-switch-nav button.active::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--accent);}
+    .module-switch-inner{flex-wrap:nowrap;}
+    .ir-arriba{bottom:82px;left:14px;width:36px;height:36px;font-size:17px;}
+    .as-fab{bottom:82px;right:12px;width:46px;height:46px;}
+    .as-panel{bottom:136px;height:calc(100vh - 170px);}
+    .toast{bottom:90px;}
+    .module-block header.app{padding:10px 14px 0;}
+  }
 </style>
 </head>
 <body class="amounts-hidden">
@@ -635,39 +695,6 @@
         <div class="ini-periodo-sel"><label for="ini-mesSelect">Ver mes</label><select id="ini-mesSelect"></select><select id="ini-anioSelect"></select></div>
       </div>
       <div class="kpis" id="ini-kpiRow"></div>
-
-      <div class="collapsible open" style="margin-top:16px;">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Punto de equilibrio</h3><span class="chev">▾</span></div>
-        <div class="collapsible-body">
-          <p class="pe-intro">Cuánto necesitás vender para cubrir el costo fijo del negocio, <b>sin contar tu sueldo ni los pagos de deuda</b>.</p>
-          <div class="pe-controls">
-            <div class="filters" id="ini-peVistaFiltros" style="margin:0;">
-              <button type="button" data-pe-vista="mensual" class="on">Mensual</button>
-              <button type="button" data-pe-vista="anual">Anual</button>
-            </div>
-            <div><label>Año</label><select id="ini-peAnioSelect"></select></div>
-            <div id="ini-peMesWrap"><label>Mes</label><select id="ini-peMesSelect"></select></div>
-          </div>
-          <div class="kpis" id="ini-peKpis"></div>
-          <div id="ini-peBar"></div>
-        </div>
-      </div>
-
-      <div class="collapsible" id="ini-rentCol" style="margin-top:16px;">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Rentabilidad</h3><span class="chev">▾</span></div>
-        <div class="collapsible-body">
-          <div class="pe-controls"><div><label>Período</label><select id="ini-rentAnioSelect" class="ini-rent-sel"></select></div></div>
-          <div class="kpis" id="ini-rentKpis"></div>
-        </div>
-      </div>
-
-      <div class="collapsible" id="ini-sueldoCol">
-        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>¿Puedo retirar o subir el sueldo?</h3><span class="chev">▾</span></div>
-        <div class="collapsible-body">
-          <div class="pe-controls"><div><label>Período</label><select id="ini-sueldoAnioSelect" class="ini-rent-sel"></select></div></div>
-          <div class="kpis" id="ini-sueldoKpis"></div>
-        </div>
-      </div>
 
       <div class="graf-card" style="margin-top:16px;">
         <div class="ini-hist-head">
@@ -770,6 +797,40 @@
         </div>
       </div>
       </section>
+
+      <div class="collapsible open" style="margin-top:16px;">
+        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Punto de equilibrio</h3><span class="chev">▾</span></div>
+        <div class="collapsible-body">
+          <p class="pe-intro">Cuánto necesitás vender para cubrir el costo fijo del negocio, <b>sin contar tu sueldo ni los pagos de deuda</b>.</p>
+          <div class="pe-controls">
+            <div class="filters" id="ini-peVistaFiltros" style="margin:0;">
+              <button type="button" data-pe-vista="mensual" class="on">Mensual</button>
+              <button type="button" data-pe-vista="anual">Anual</button>
+            </div>
+            <div><label>Año</label><select id="ini-peAnioSelect"></select></div>
+            <div id="ini-peMesWrap"><label>Mes</label><select id="ini-peMesSelect"></select></div>
+          </div>
+          <div class="kpis" id="ini-peKpis"></div>
+          <div id="ini-peBar"></div>
+        </div>
+      </div>
+
+      <div class="collapsible" id="ini-rentCol" style="margin-top:16px;">
+        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Rentabilidad</h3><span class="chev">▾</span></div>
+        <div class="collapsible-body">
+          <div class="pe-controls"><div><label>Período</label><select id="ini-rentAnioSelect" class="ini-rent-sel"></select></div></div>
+          <div class="kpis" id="ini-rentKpis"></div>
+        </div>
+      </div>
+
+      <div class="collapsible" id="ini-sueldoCol">
+        <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>¿Puedo retirar o subir el sueldo?</h3><span class="chev">▾</span></div>
+        <div class="collapsible-body">
+          <div class="pe-controls"><div><label>Período</label><select id="ini-sueldoAnioSelect" class="ini-rent-sel"></select></div></div>
+          <div class="kpis" id="ini-sueldoKpis"></div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -1326,6 +1387,8 @@
   </div>
 
   <div class="hist-pie"><button type="button" id="histBtn" title="Historial de cambios">&#128339; Historial</button><button type="button" id="respBtn" title="Respaldo de tus datos">&#128190; Respaldo</button></div>
+
+  <button type="button" class="ir-arriba" id="irArriba" aria-label="Volver arriba" title="Volver arriba">&#8593;</button>
 
   <!-- ---------- ASISTENTE (botón flotante) ---------- -->
   <button type="button" class="as-fab" id="asFab" title="Asistente: preguntas sobre el negocio" aria-label="Abrir el asistente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg></button>
@@ -6757,7 +6820,7 @@
     if(d.cuenta) partes.push(d.cuenta);
     if(d.categoria) partes.push(d.categoria); else if(d.nombre) partes.push(d.nombre);
     if(d.anio) partes.push(String(d.anio));
-    if(d.mes!==undefined && d.mes!==null && d.mes!=='__nuevo__'){ const m = Number(d.mes); partes.push(m>=1&&m<=12 ? HIST_MESES[m] : String(d.mes)); }
+    if(d.mes!==undefined && d.mes!==null && d.mes!=='__nuevo__'){ const m = Number(d.mes), mi = MESES.indexOf(String(d.mes).toUpperCase()); partes.push(m>=1&&m<=12 ? HIST_MESES[m] : (mi>=0 ? MESES_CORTO[mi] : String(d.mes))); }
     return partes.join(' · ');
   }
   const HIST_IGN = new Set(['id','created_at','updated_at']);
@@ -7010,6 +7073,25 @@
     overlay.addEventListener('click', ev=>{ if(ev.target===overlay) overlay.remove(); });
   }
   document.getElementById('respBtn').addEventListener('click', abrirRespaldo);
+
+
+  // ---------- Navegación fluida: encabezado compacto, volver arriba, altura del encabezado ----------
+  (function(){
+    const ms = document.querySelector('.module-switch'), up = document.getElementById('irArriba');
+    const medir = ()=>{ if(ms) document.documentElement.style.setProperty('--hdr-h', ms.offsetHeight+'px'); };
+    let compacto = false;
+    const onScroll = ()=>{
+      const y = window.scrollY || document.documentElement.scrollTop;
+      const quiere = compacto ? y > 20 : y > 80;
+      if(quiere !== compacto){ compacto = quiere; document.body.classList.toggle('hdr-compacto', compacto); setTimeout(medir, 230); }
+      up.classList.toggle('ver', y > 500);
+    };
+    window.addEventListener('scroll', onScroll, { passive:true });
+    window.addEventListener('resize', medir);
+    if(window.ResizeObserver && ms) new ResizeObserver(medir).observe(ms);
+    up.addEventListener('click', ()=>window.scrollTo({ top:0, behavior:'smooth' }));
+    medir();
+  })();
 
   async function reloadEverything(){
     state.flujoActiveCuenta = null;
