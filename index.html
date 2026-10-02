@@ -917,7 +917,7 @@
         <button data-tab="presupuesto" draggable="true">Gastos</button>
         <button data-tab="presupuestoanual" draggable="true">Presupuesto anual</button>
         <button data-tab="resumen" draggable="true">Resumen</button>
-        <button data-tab="patrimonio" draggable="true">Patrimonio</button>
+        <button data-tab="patrimonio" draggable="true">🔒 Patrimonio</button>
       </nav>
     </header>
 
@@ -1691,9 +1691,20 @@
       renderPasivosResumenChart();
     });
 
-    document.getElementById('tabs').addEventListener('click', (ev)=>{
+    document.getElementById('tabs').addEventListener('click', async (ev)=>{
       const btn = ev.target.closest('button[data-tab]');
       if(!btn) return;
+      if(btn.dataset.tab === 'patrimonio'){
+        if(!modulosAbiertos.patrimonio){
+          const ok = await pedirAccesoModulo('patrimonio');
+          if(!ok) return;
+          modulosAbiertos.patrimonio = true;
+          btn.textContent = '🔓 Patrimonio';
+        }
+      } else if(modulosAbiertos.patrimonio){
+        modulosAbiertos.patrimonio = false;
+        const pb = document.querySelector('#tabs button[data-tab="patrimonio"]'); if(pb) pb.textContent = '🔒 Patrimonio';
+      }
       document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('active', b===btn));
       document.querySelectorAll('#module-ventas section.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+btn.dataset.tab));
       if(btn.dataset.tab === 'resumen') renderResumenPanel();
@@ -6783,6 +6794,7 @@
     respaldo:  { nombre:'Respaldo',  titulo:'Respaldo de datos',    txt:'Ingresá tu PIN para descargar el respaldo.' },
     historial: { nombre:'Historial', titulo:'Historial de cambios', txt:'Ingresá tu PIN para ver el historial.' },
     asistente: { nombre:'Asistente IA', titulo:'Asistente con IA', txt:'Ingresá tu PIN para usar la IA del asistente.' },
+    patrimonio:{ nombre:'Patrimonio', titulo:'Patrimonio protegido', txt:'Ingresá tu PIN para ver el patrimonio y el valor del negocio.' },
     mostrar:   { nombre:'Mostrar',   titulo:'Secciones ocultas',   txt:'Ingresá tu PIN para ver las secciones ocultas.' },
   };
   const modulosAbiertos = {};
@@ -6906,6 +6918,11 @@
       modulosAbiertos[name] = true;
     }
     Object.keys(modulosAbiertos).forEach(k=>{ if(k!==name) modulosAbiertos[k] = false; });
+    if(!modulosAbiertos.patrimonio){
+      const pb = document.querySelector('#tabs button[data-tab="patrimonio"]'); if(pb) pb.textContent = '🔒 Patrimonio';
+      const pp = document.getElementById('panel-patrimonio');
+      if(pp && pp.classList.contains('active')){ const vb = document.querySelector('#tabs button[data-tab="ventas"]'); if(vb) vb.click(); }
+    }
     lockActualizarBotones();
     document.querySelectorAll('.module-switch-nav button').forEach(b=>b.classList.toggle('active', b.dataset.module===name));
     document.querySelectorAll('.module-block').forEach(m=>m.classList.toggle('active', m.id==='module-'+name));
