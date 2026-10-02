@@ -114,6 +114,18 @@
   .as-in button{border:none;border-radius:8px;padding:0 12px;font-family:inherit;font-size:12.5px;cursor:pointer;}
   .as-in .as-send{background:var(--ink);color:#fff;} .as-in .as-toggle{background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent);}
   @media(max-width:560px){ .as-panel{right:8px;left:8px;width:auto;max-width:none;bottom:76px;height:calc(100vh - 100px);} .as-fab{right:12px;bottom:12px;} }
+  .as-iasw{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#D8D8D4;cursor:pointer;user-select:none;}
+  .as-iasw input{accent-color:var(--accent);}
+  .as-think{display:inline-flex;gap:4px;align-items:center;} .as-think i{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);animation:asblink 1s infinite;} .as-think i:nth-child(2){animation-delay:.2s;} .as-think i:nth-child(3){animation-delay:.4s;}
+  @keyframes asblink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+  .as-b.ia{border-color:var(--accent);}
+  .as-acc{margin-top:10px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:10px;padding:10px 12px;}
+  .as-acc-t{font-size:11px;letter-spacing:.4px;text-transform:uppercase;color:var(--accent-ink);margin-bottom:4px;}
+  .as-acc-d{font-size:13px;line-height:1.5;}
+  .as-acc-b{display:flex;gap:8px;margin-top:10px;align-items:center;}
+  .as-acc-b button{border:1px solid var(--line-strong);background:#fff;border-radius:8px;padding:6px 14px;font-size:12.5px;cursor:pointer;font-family:inherit;}
+  .as-acc-b button[data-asacc="ok"]{background:var(--ink);color:var(--accent);border-color:var(--ink);font-weight:600;}
+  .as-acc-r{font-size:12px;color:var(--ink-soft);} .as-acc-r.ok{color:var(--good);} .as-acc-r.err{color:var(--bad);}
   /* Capa educativa: botón discreto + tarjeta que se abre/cierra en cada pestaña */
   .guia-wrap{margin:14px 0 2px;}
   .guia-btn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--line-strong);color:var(--ink-soft);border-radius:999px;padding:4px 13px 4px 8px;font-family:inherit;font-size:12px;cursor:pointer;}
@@ -1393,7 +1405,7 @@
   <!-- ---------- ASISTENTE (botón flotante) ---------- -->
   <button type="button" class="as-fab" id="asFab" title="Asistente: preguntas sobre el negocio" aria-label="Abrir el asistente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg></button>
   <div class="as-panel" id="asPanel" role="dialog" aria-label="Asistente">
-    <div class="as-head"><div><b>Asistente</b><span>Responde con los números de tu dashboard</span></div><button type="button" class="as-eye" id="asEye" title="Mostrar u ocultar los montos en este chat">👁</button><button type="button" id="asReset" title="Borrar la conversación y empezar de nuevo">🗑</button><button type="button" id="asClose" title="Cerrar">✕</button></div>
+    <div class="as-head"><div><b>Asistente</b><span id="asSub">Responde con los números de tu dashboard</span></div><label class="as-iasw" title="Activá la IA para preguntas libres y cargar gastos"><input type="checkbox" id="asIaChk"> IA</label><button type="button" class="as-eye" id="asEye" title="Mostrar u ocultar los montos en este chat">👁</button><button type="button" id="asReset" title="Borrar la conversación y empezar de nuevo">🗑</button><button type="button" id="asClose" title="Cerrar">✕</button></div>
     <div class="as-msgs" id="asMsgs"></div>
     <div class="as-chips" id="asChips"></div>
     <form class="as-in" id="asForm"><button type="button" class="as-toggle" id="asToggle" title="Ver las preguntas sugeridas">?</button><input type="text" id="asInput" placeholder="Escribí una pregunta (ej: cuánto vendí en marzo 2026)" autocomplete="off"><button type="submit" class="as-send">Enviar</button></form>
@@ -5581,6 +5593,182 @@
     if(!state.objCfg) await objCargarCfg();
     return state.iniData;
   }
+  // ---------- ASISTENTE CON IA (Gemini) ----------
+  // La clave de Gemini NO está en este archivo: vive como secreto en una función de Supabase ("asistente-ia").
+  // Al asistente solo se le mandan RESÚMENES: totales por mes, sin nombres de proveedores, acreedores ni deudas.
+  let asIaOn = (()=>{ try{ return localStorage.getItem('vt_as_ia')!=='0'; }catch(e){ return true; } })();
+  const asHist = [];
+  const AS_IA_MAX_DIA = 25;                       // tope diario de preguntas a la IA (cuida el plan gratis)
+  const asAcciones = new Map(); let asAccionN = 0;
+  function asIaUsosHoy(){
+    const h = new Date().toISOString().slice(0,10);
+    try{ const o = JSON.parse(localStorage.getItem('vt_as_ia_uso')||'{}'); return o.f===h ? (o.n||0) : 0; }catch(e){ return 0; }
+  }
+  function asIaSumarUso(){
+    const h = new Date().toISOString().slice(0,10);
+    try{ localStorage.setItem('vt_as_ia_uso', JSON.stringify({ f:h, n: asIaUsosHoy()+1 })); }catch(e){}
+  }
+  const asRed = n => Math.round(n||0);
+  function asCategoriasGasto(data){
+    const set = new Map();
+    (data.presupuesto||[]).forEach(r=>{
+      if(!r.categoria || presupuestoExcluida(r.categoria)) return;
+      const t = presupuestoTipoDe(r.categoria);
+      if(t==='normal' || t==='sueldo') set.set(r.categoria, t);
+    });
+    return Array.from(set, ([nombre,tipo])=>({ nombre, tipo })).sort((a,b)=>a.nombre.localeCompare(b.nombre));
+  }
+  function asContextoIA(data){
+    const hoy = iniHoy(), kHoy = periodoKey(hoy.anio, hoy.mes);
+    const anios = Array.from(new Set([...(data.ventas||[]).map(r=>r.anio), ...(data.compras||[]).map(r=>r.anio), ...(data.presupuesto||[]).map(r=>r.anio)].filter(a=>a!=null))).sort((a,b)=>a-b);
+    const meses = [];
+    anios.forEach(a=>MESES.forEach(m=>{
+      if(periodoKey(a,m) > kHoy) return;
+      const v = iniValoresPeriodo(data, a, m);
+      const efe = (data.ventas||[]).filter(r=>r.anio===a&&r.mes===m).reduce((s,r)=>s+(r.efectivo||0),0);
+      if(!v.venta && !v.compra && !v.gasto && !v.sueldo && !v.deuda) return;
+      meses.push({ anio:a, mes:m, venta:asRed(v.venta), venta_efectivo:asRed(efe), venta_credito:asRed(v.venta-efe), compras:asRed(v.compra), costo_fijo:asRed(v.gasto), sueldo_andres:asRed(v.sueldo), intereses_y_deuda:asRed(v.deuda) });
+    }));
+    // Totales YA CALCULADOS (la IA se equivoca al sumar listas largas): por año y de todo el histórico.
+    const totales_por_anio = {};
+    let hist = { venta:0, compras:0, costo_fijo:0, sueldo_andres:0, intereses_y_deuda:0, meses_con_venta:0 };
+    meses.forEach(m=>{
+      const t = totales_por_anio[m.anio] = totales_por_anio[m.anio] || { venta:0, venta_efectivo:0, venta_credito:0, compras:0, costo_fijo:0, sueldo_andres:0, intereses_y_deuda:0, meses_con_venta:0 };
+      ['venta','venta_efectivo','venta_credito','compras','costo_fijo','sueldo_andres','intereses_y_deuda'].forEach(k=>{ t[k]+=m[k]; });
+      if(m.venta>0) t.meses_con_venta++;
+      hist.venta+=m.venta; hist.compras+=m.compras; hist.costo_fijo+=m.costo_fijo; hist.sueldo_andres+=m.sueldo_andres; hist.intereses_y_deuda+=m.intereses_y_deuda; if(m.venta>0) hist.meses_con_venta++;
+    });
+    hist.utilidad = hist.venta - hist.compras - hist.costo_fijo;
+    Object.values(totales_por_anio).forEach(t=>{ t.utilidad = t.venta - t.compras - t.costo_fijo; });
+    const mesesRecientes = meses.slice(-36);
+    const desde = anios.length ? Math.max(anios[0], hoy.anio-2) : hoy.anio;
+    const items = {};
+    (data.presupuesto||[]).forEach(r=>{
+      if(r.anio<desde || !r.categoria || presupuestoExcluida(r.categoria) || !(r.monto)) return;
+      if(periodoKey(r.anio,r.mes) > kHoy) return;
+      const t = presupuestoTipoDe(r.categoria); if(t!=='normal' && t!=='sueldo') return;
+      const it = items[r.categoria] = items[r.categoria] || { tipo:t, por_anio:{} };
+      const arr = it.por_anio[r.anio] = it.por_anio[r.anio] || Array(12).fill(0);
+      arr[MESES.indexOf(r.mes)] += asRed(r.monto);
+    });
+    const caja = iniCajaTotalAl(data, hoy.anio, hoy.mes);
+    return {
+      hoy: { anio:hoy.anio, mes:hoy.mes }, moneda:'pesos uruguayos',
+      nota: 'Los totales_por_anio y total_historico ya están calculados: usalos tal cual y no los recalcules sumando meses. El detalle mensual (meses_ultimos_36) sirve para comparar meses puntuales.',
+      total_historico: hist, totales_por_anio,
+      meses_ultimos_36: mesesRecientes, gastos_por_item: items,
+      caja_total_hoy: caja ? asRed(caja.total) : null,
+      categorias_de_gasto: asCategoriasGasto(data).map(c=>c.nombre),
+      deudas: 'NO DISPONIBLES: por privacidad no se envían deudas ni nombres de acreedores o proveedores',
+    };
+  }
+  function asFormatoIA(t){
+    const esc = escapeHtml(t).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\$\s?-?\d[\d.,]*/g, m=>`<span class="as-m">${m}</span>`);
+    return esc.split(/\n{2,}/).map(b=>{
+      const ls = b.split('\n');
+      if(ls.every(l=>/^\s*[-•*]\s+/.test(l))) return '<ul>' + ls.map(l=>`<li>${l.replace(/^\s*[-•*]\s+/,'')}</li>`).join('') + '</ul>';
+      return '<p>' + ls.join('<br>') + '</p>';
+    }).join('');
+  }
+  // Valida una acción propuesta por la IA contra tus datos reales. Devuelve la acción limpia o null.
+  function asValidarAccion(a, data){
+    if(!a || a.tipo!=='agregar_gasto') return null;
+    const cats = asCategoriasGasto(data);
+    const cat = cats.find(c=>asNorm(c.nombre).trim()===asNorm(a.categoria).trim());
+    const mes = MESES.find(m=>asNorm(m)===asNorm(a.mes).trim());
+    const anio = parseInt(a.anio,10) || iniHoy().anio;
+    const monto = Math.round(parseFloat(a.monto)*100)/100;
+    if(!cat || !mes || !(anio>=2000 && anio<=2100) || !(monto>0) || monto>100000000) return null;
+    return { tipo:'agregar_gasto', categoria:cat.nombre, mes, anio, monto };
+  }
+  async function asGuardarGasto(a){
+    const { data:ex, error:e1 } = await sb.from('presupuesto').select('id,monto').eq('anio',a.anio).eq('mes',a.mes).eq('categoria',a.categoria).limit(1);
+    if(e1) throw e1;
+    if(ex && ex.length){
+      const { error } = await sb.from('presupuesto').update({ monto: Math.round(((ex[0].monto||0)+a.monto)*100)/100 }).eq('id', ex[0].id);
+      if(error) throw error;
+    } else {
+      const { error } = await sb.from('presupuesto').insert({ anio:a.anio, mes:a.mes, categoria:a.categoria, monto:a.monto });
+      if(error) throw error;
+    }
+    state.iniData = null;
+    try{ await loadPresupuesto(); }catch(e){}
+  }
+  function asTarjetaAccion(a){
+    const id = ++asAccionN; asAcciones.set(id, a);
+    const mesTxt = a.mes.charAt(0)+a.mes.slice(1).toLowerCase();
+    return `<div class="as-acc" data-id="${id}"><div class="as-acc-t">Voy a agregar este gasto:</div><div class="as-acc-d"><b><span class="as-m">$ ${fmt(a.monto)}</span></b> en <b>${escapeHtml(a.categoria)}</b><br>${mesTxt} ${a.anio} · se suma a lo que ya haya cargado</div><div class="as-acc-b"><button type="button" data-asacc="ok">Confirmar</button><button type="button" data-asacc="no">Cancelar</button></div></div>`;
+  }
+  async function asClickAccion(btn){
+    const card = btn.closest('.as-acc'); if(!card || card.dataset.hecho) return;
+    const a = asAcciones.get(parseInt(card.dataset.id,10)); if(!a) return;
+    card.dataset.hecho = '1';
+    if(btn.dataset.asacc==='no'){ card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r">Cancelado. No se guardó nada.</span>'; return; }
+    card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r">Guardando…</span>';
+    try{
+      await asGuardarGasto(a);
+      card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r ok">Listo, quedó cargado. Si te equivocaste, lo podés deshacer desde el Historial.</span>';
+      showToast('Gasto agregado');
+    }catch(e){
+      card.dataset.hecho = '';
+      card.querySelector('.as-acc-b').innerHTML = `<span class="as-acc-r err">No se pudo guardar (${escapeHtml(e.message||String(e))}).</span>`;
+    }
+  }
+  async function asIAPreguntar(data, texto){
+    if(asIaUsosHoy() >= AS_IA_MAX_DIA){
+      asAgregar('bot','<p>Hoy ya usaste las '+AS_IA_MAX_DIA+' preguntas con IA que me puse de tope para cuidar el plan gratis. Mañana se renuevan. Mientras tanto te respondo con los cálculos fijos.</p>');
+      const r = asRutear(data, texto);
+      if(r.key){ try{ asAgregar('bot', await AS_RESP[r.key](data)); }catch(e){} } else asAgregar('bot', r.html);
+      return;
+    }
+    if(!asDesbloqueado){
+      asAgregar('bot','<p>Para usar la IA necesito tu PIN.</p>');
+      if(!(await pedirAccesoModulo('asistente'))){ asAgregar('bot','<p>Sin el PIN no uso la IA. Podés seguir con las preguntas de la lista.</p>'); return; }
+      asDesbloqueado = true;
+    }
+    const burbuja = asAgregar('bot ia','<span class="as-think"><i></i><i></i><i></i></span>');
+    const box = document.getElementById('asMsgs');
+    try{
+      const ctx = asContextoIA(data);
+      const { data: res, error } = await sb.functions.invoke('asistente-ia', { body:{ pregunta:texto, historial:asHist.slice(-8), contexto:ctx } });
+      if(error){
+        let detalle = '', status = null;
+        try{ status = error.context && error.context.status; const j = await error.context.json(); detalle = j.error || j.message || ''; }catch(e){}
+        if(status===404 || /FunctionsFetchError|Failed to send/i.test(error.name+' '+error.message)){
+          burbuja.classList.remove('ia'); burbuja.innerHTML = '<p>La IA todavía no está activada: falta publicar la función <b>asistente-ia</b> en Supabase. Mientras tanto te respondo con los cálculos fijos.</p>';
+          const r = asRutear(data, texto);
+          if(r.key){ try{ asAgregar('bot', await AS_RESP[r.key](data)); }catch(e){} } else asAgregar('bot', r.html);
+          return;
+        }
+        burbuja.classList.remove('ia');
+        burbuja.innerHTML = status===429
+          ? '<p>Se acabó el límite gratis de Gemini por ahora. Probá más tarde; mientras tanto podés usar las preguntas de la lista.</p>'
+          : `<p>No pude consultar a la IA${detalle?': '+escapeHtml(detalle):''}${status?` (código ${status})`:''}.</p>`;
+        return;
+      }
+      asIaSumarUso();
+      const txt = (res && res.respuesta) || 'La IA no devolvió respuesta.';
+      const accion = asValidarAccion(res && res.accion, data);
+      let html = asFormatoIA(txt);
+      if(res && res.accion && !accion) html += '<p>No pude armar esa carga con seguridad (categoría, mes o monto no coinciden con tus datos). Decímelo de nuevo con la categoría exacta.</p>';
+      if(accion) html += asTarjetaAccion(accion);
+      burbuja.innerHTML = html + asSrc('Respuesta generada por IA (Gemini) a partir de resúmenes de tu dashboard, sin nombres. Puede equivocarse: chequeá los números importantes; no reemplaza a un contador.');
+      asHist.push({ role:'user', content:texto }, { role:'assistant', content:txt });
+    } catch(e){
+      burbuja.innerHTML = `<p>Algo falló al consultar a la IA (${escapeHtml(e.message||String(e))}).</p>`;
+    } finally { box.scrollTop = box.scrollHeight; }
+  }
+  function asActualizarModo(){
+    const sub = document.getElementById('asSub'), chk = document.getElementById('asIaChk');
+    if(chk) chk.checked = asIaOn;
+    if(sub) sub.textContent = asIaOn ? 'Con IA: preguntá o pedime cargar un gasto' : 'Sin IA: responde con cálculos fijos';
+  }
+  async function asVerEnviado(){
+    const data = await asAsegurarDatos();
+    const ctx = data ? asContextoIA(data) : {};
+    asAgregar('bot', '<p>Esto es lo único que se manda a la IA con cada pregunta:</p><pre style="white-space:pre-wrap;max-height:220px;overflow:auto;font-size:11px;background:var(--paper-2);padding:8px;border-radius:8px;">'+escapeHtml(JSON.stringify(ctx,null,1))+'</pre>');
+  }
+
   async function asPreguntar(key, textoUsuario){
     if(asOcupado) return; asOcupado = true;
     try{
@@ -5588,6 +5776,10 @@
       let data = await asAsegurarDatos();
       if(!data){ asAgregar('bot', '<p>No pude leer los datos del dashboard ahora. Probá de nuevo en un momento.</p>'); return; }
       let html;
+      if(!key && asIaOn){
+        await asIAPreguntar(data, textoUsuario||'');
+        return;
+      }
       if(!key){
         const r = asRutear(data, textoUsuario||'');
         if(r.key) key = r.key; else html = r.html;
@@ -5605,7 +5797,7 @@
     } finally { asOcupado = false; }
   }
   function asSaludo(){
-    asAgregar('bot', '<details class="as-hola" open><summary>Hola, soy el asistente del dashboard</summary><p><b>No soy una IA</b>: respondo con los cálculos de tus propios números (ventas, compras, gastos, caja y deudas).</p><p style="margin-bottom:0">Elegí una pregunta de abajo o escribí una, por ejemplo <i>"cuánto vendí en marzo 2026"</i>.</p></details>');
+    asAgregar('bot', '<details class="as-hola" open><summary>Hola, soy el asistente del dashboard</summary><p>Con el interruptor <b>IA</b> activado podés escribir lo que quieras sobre tus números (<i>"¿en qué mes gasté más?"</i>) o pedirme cargar un gasto (<i>"agregá $4.500 de luz en octubre"</i>). Sin la IA respondo con cálculos fijos.</p><p>A la IA solo le llegan <b>resúmenes sin nombres</b> de proveedores ni deudas. <a href="#" data-asver onclick="return false" style="color:var(--accent-ink);">Ver qué se envía</a></p><p style="margin-bottom:0">También podés elegir una pregunta de la lista (con <b>?</b>).</p></details>');
   }
   function asReiniciar(){
     document.getElementById('asMsgs').innerHTML = '';
@@ -5632,6 +5824,12 @@
     document.getElementById('asClose').addEventListener('click', cerrar);
     document.getElementById('asReset').addEventListener('click', asReiniciar);
     document.getElementById('asEye').addEventListener('click', ()=>panel.classList.toggle('as-reveal'));
+    document.getElementById('asIaChk').addEventListener('change', ev=>{ asIaOn = ev.target.checked; try{ localStorage.setItem('vt_as_ia', asIaOn?'1':'0'); }catch(e){} asActualizarModo(); });
+    asActualizarModo();
+    document.getElementById('asMsgs').addEventListener('click', ev=>{
+      const b = ev.target.closest('button[data-asacc]'); if(b) asClickAccion(b);
+      if(ev.target.closest('[data-asver]')) asVerEnviado();
+    });
     document.getElementById('asMsgs').addEventListener('click', ev=>{ if(ev.target.closest('.as-m') && document.body.classList.contains('amounts-hidden')) panel.classList.add('as-reveal'); });
     document.getElementById('asToggle').addEventListener('click', ()=>chips.classList.toggle('hide'));
     document.getElementById('asForm').addEventListener('submit', ev=>{
@@ -6441,6 +6639,7 @@
     ocultar:   { nombre:'Ocultar',   titulo:'Ocultar sección',     txt:'Ingresá tu PIN para ocultar esta sección del panel.' },
     respaldo:  { nombre:'Respaldo',  titulo:'Respaldo de datos',    txt:'Ingresá tu PIN para descargar el respaldo.' },
     historial: { nombre:'Historial', titulo:'Historial de cambios', txt:'Ingresá tu PIN para ver el historial.' },
+    asistente: { nombre:'Asistente IA', titulo:'Asistente con IA', txt:'Ingresá tu PIN para usar la IA del asistente.' },
     mostrar:   { nombre:'Mostrar',   titulo:'Secciones ocultas',   txt:'Ingresá tu PIN para ver las secciones ocultas.' },
   };
   const modulosAbiertos = {};
