@@ -633,6 +633,28 @@
   .gc-hist:not(.open) .ini-hist-ctrls,.gc-hist:not(.open) .ini-seg-ind,.gc-hist:not(.open) #ini-histBanner,.gc-hist:not(.open) #ini-histLegend,.gc-hist:not(.open) .graf-canvas-wrap,.gc-hist:not(.open) #ini-histHint,.gc-hist:not(.open) #ini-histSub{display:none;}
   .gc-hist:not(.open) .ini-hist-head{margin-bottom:0;}
   .gc-hist:not(.open){padding-bottom:14px;}
+
+  /* Patrimonio */
+  .pt-cot{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-soft);margin:0 0 14px;}
+  .pt-cot input{width:90px;}
+  #pt-totales{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));}
+  .pt-bloques{display:grid;gap:14px;margin-top:16px;}
+  @media(min-width:1000px){ .pt-bloques{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start;} }
+  .pt-card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;}
+  .pt-card h3{margin:0 0 3px;font-size:15px;font-weight:700;}
+  .pt-card .pt-sub{font-size:12px;color:var(--ink-soft);margin:0 0 12px;line-height:1.4;}
+  .pt-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .pt-row label{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--ink-soft);flex:1 1 110px;}
+  .pt-row input,.pt-row select{width:100%;box-sizing:border-box;}
+  .pt-eq{font-size:12.5px;margin:6px 0 10px;color:var(--ink);}
+  .pt-eq b{font-weight:700;}
+  .pt-hist{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px;}
+  .pt-hist td,.pt-hist th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;}
+  .pt-hist tr.act td{font-weight:700;}
+  .pt-barra{height:8px;border-radius:6px;background:var(--line);overflow:hidden;margin-top:4px;}
+  .pt-barra i{display:block;height:100%;background:var(--accent);}
+  body.amounts-hidden .pt-card input[type=number], body.amounts-hidden .pt-hist .m, body.amounts-hidden .pt-eq b, body.amounts-hidden .pt-cot b{filter:blur(6px);}
+  body.amounts-hidden .pt-card input[type=number]:focus{filter:none;}
 </style>
 </head>
 <body class="amounts-hidden">
@@ -895,6 +917,7 @@
         <button data-tab="presupuesto" draggable="true">Gastos</button>
         <button data-tab="presupuestoanual" draggable="true">Presupuesto anual</button>
         <button data-tab="resumen" draggable="true">Resumen</button>
+        <button data-tab="patrimonio" draggable="true">Patrimonio</button>
       </nav>
     </header>
 
@@ -1080,6 +1103,13 @@
             <div id="retiroAndresBox"></div>
           </div>
         </div>
+      </section>
+
+      <section class="panel" id="panel-patrimonio">
+        <div class="section-title"><h2>Patrimonio y valor del negocio</h2><span class="hint">Valores que cargás vos, en pesos o en dólares</span></div>
+        <div class="pt-cot" id="pt-cot"></div>
+        <div class="kpis" id="pt-totales"></div>
+        <div class="pt-bloques" id="pt-bloques"></div>
       </section>
 
       <section class="panel" id="panel-resumen">
@@ -1668,6 +1698,7 @@
       document.querySelectorAll('#module-ventas section.panel').forEach(p=>p.classList.toggle('active', p.id==='panel-'+btn.dataset.tab));
       if(btn.dataset.tab === 'resumen') renderResumenPanel();
       if(btn.dataset.tab === 'presupuestoanual') renderPresupuestoAnual();
+      if(btn.dataset.tab === 'patrimonio') renderPatrimonio();
     });
     enableTabDragReorder('tabs', 'tab',
       ()=>Array.from(document.querySelectorAll('#tabs button[data-tab]')).map(b=>b.dataset.tab),
@@ -6897,6 +6928,112 @@
     card.classList.toggle('open');
     if(card.classList.contains('open')){
       setTimeout(()=>{ try{ card.querySelectorAll('canvas').forEach(c=>{ const ch = window.Chart && Chart.getChart(c); if(ch){ ch.resize(); ch.update('none'); } }); }catch(e){} }, 30);
+    }
+  });
+
+  // ---------- PATRIMONIO (mercadería a costo, bienes del local, valor llave) ----------
+  // Todo lo carga Andrés a mano, en pesos o dólares. Se guarda en item_orden (contexto 'patrimonio').
+  const PT = { cfg:null };
+  function ptCfgVacia(){ return { stock:{ historial:[] }, inventario:{ monto:0, mon:'UYU', f:'', nota:'' }, llave:{ monto:0, mon:'USD', f:'', nota:'' }, cotManual:null }; }
+  async function ptCargar(){
+    const cfg = ptCfgVacia();
+    try{
+      const { data, error } = await sb.from('item_orden').select('categoria').eq('contexto','patrimonio').eq('cuenta','datos').limit(1);
+      if(!error && data && data[0]){ try{ const o = JSON.parse(data[0].categoria); if(o) Object.assign(cfg, o); }catch(e){} }
+    }catch(e){}
+    cfg.stock = cfg.stock || { historial:[] }; cfg.stock.historial = cfg.stock.historial || [];
+    PT.cfg = cfg;
+  }
+  async function ptGuardar(){
+    try{
+      await sb.from('item_orden').delete().eq('contexto','patrimonio').eq('cuenta','datos');
+      const { error } = await sb.from('item_orden').insert({ contexto:'patrimonio', cuenta:'datos', categoria: JSON.stringify(PT.cfg), orden:10 });
+      if(error) throw error;
+      showToast('Guardado');
+    }catch(e){ showToast('No se pudo guardar el patrimonio: '+(e.message||e), true); }
+  }
+  function ptCot(){ const m = parseFloat(PT.cfg.cotManual); if(m>0) return m; return state.cotizacionUSD ? state.cotizacionUSD.valor : null; }
+  function ptPesos(monto, mon){ const c = ptCot(); if(mon==='USD') return c ? monto*c : null; return monto; }
+  function ptUsd(monto, mon){ const c = ptCot(); if(mon==='USD') return monto; return c ? monto/c : null; }
+  const ptFp = v => v==null ? '—' : '$ ' + fmt(Math.round(v));
+  const ptFu = v => v==null ? '—' : 'US$ ' + fmt(Math.round(v));
+  function ptStockActual(){
+    const h = (PT.cfg.stock.historial||[]).slice().sort((a,b)=>String(b.f).localeCompare(String(a.f)));
+    return h[0] || null;
+  }
+  function ptEquiv(monto, mon){
+    if(!(monto>0)) return '';
+    return `<div class="pt-eq">≈ <b>${ptFp(ptPesos(monto,mon))}</b> · <b>${ptFu(ptUsd(monto,mon))}</b></div>`;
+  }
+  function ptHoyIso(){ const d = new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function ptFechaTxt(f){ if(!f) return ''; const p = String(f).split('-'); return p.length===3 ? `${p[2]}/${p[1]}/${p[0]}` : f; }
+  function ptSelMon(id, mon){ return `<select id="${id}"><option value="UYU"${mon==='UYU'?' selected':''}>Pesos</option><option value="USD"${mon==='USD'?' selected':''}>Dólares</option></select>`; }
+  async function renderPatrimonio(){
+    if(!PT.cfg) await ptCargar();
+    if(!state.cotizacionUSD){ try{ state.cotizacionUSD = await fetchCotizacionUSD(); }catch(e){} }
+    const cfg = PT.cfg, cot = ptCot();
+    // Cotización
+    document.getElementById('pt-cot').innerHTML = cot
+      ? `<span>Dólar de referencia: <b>$ ${cot.toFixed(2).replace('.',',')}</b> ${parseFloat(cfg.cotManual)>0 ? '(el que cargaste vos)' : (state.cotizacionUSD && state.cotizacionUSD.fecha ? '(BCU, '+escapeHtml(String(state.cotizacionUSD.fecha).slice(0,10))+')' : '')}</span>
+         <label>Usar otro valor: <input type="number" step="0.01" id="pt-cotManual" value="${parseFloat(cfg.cotManual)>0?cfg.cotManual:''}" placeholder="opcional"></label><button class="btn ghost small" id="pt-cotOk">Aplicar</button>`
+      : `<span>No pude traer la cotización del dólar. Cargala a mano para ver las equivalencias:</span><input type="number" step="0.01" id="pt-cotManual" placeholder="$ por dólar"><button class="btn ghost small" id="pt-cotOk">Aplicar</button>`;
+    // Bloques
+    const st = ptStockActual(), inv = cfg.inventario, ll = cfg.llave;
+    const hist = (cfg.stock.historial||[]).slice().sort((a,b)=>String(b.f).localeCompare(String(a.f)));
+    const bStock = `<div class="pt-card"><h3>Mercadería (stock a costo)</h3>
+      <p class="pt-sub">Valor de la mercadería a precio de costo. Lo cargás una vez al año, después del balance.</p>
+      ${st ? `<div class="pt-eq">Último balance (${ptFechaTxt(st.f)}): <b>${st.mon==='USD'?ptFu(st.monto):ptFp(st.monto)}</b></div>${ptEquiv(st.monto, st.mon)}` : '<div class="pt-eq">Todavía no cargaste ningún balance.</div>'}
+      <div class="pt-row"><label>Fecha del balance<input type="date" id="pt-st-f" value="${ptHoyIso()}"></label><label>Monto<input type="number" step="0.01" id="pt-st-m" placeholder="0"></label><label>Moneda${ptSelMon('pt-st-mon', st?st.mon:'UYU')}</label></div>
+      <div class="pt-row"><label>Nota (opcional)<input type="text" id="pt-st-n" placeholder="ej. balance 2026"></label></div>
+      <button class="btn small" id="pt-st-add">Registrar balance</button>
+      ${hist.length ? `<table class="pt-hist"><thead><tr><th>Fecha</th><th>Monto</th><th>Nota</th><th></th></tr></thead><tbody>${hist.map((h,i)=>`<tr class="${i===0?'act':''}"><td>${ptFechaTxt(h.f)}</td><td><span class="m">${h.mon==='USD'?ptFu(h.monto):ptFp(h.monto)}</span></td><td>${escapeHtml(h.nota||'')}</td><td><button class="btn danger small" data-pt-del="${i}" title="Borrar este balance">✕</button></td></tr>`).join('')}</tbody></table>` : ''}
+    </div>`;
+    const simple = (k, titulo, sub, ph) => { const o = cfg[k]; return `<div class="pt-card"><h3>${titulo}</h3><p class="pt-sub">${sub}</p>
+      <div class="pt-row"><label>Monto<input type="number" step="0.01" id="pt-${k}-m" value="${o.monto>0?o.monto:''}" placeholder="0"></label><label>Moneda${ptSelMon('pt-'+k+'-mon', o.mon)}</label></div>
+      <div class="pt-row"><label>Valor al<input type="date" id="pt-${k}-f" value="${escapeHtml(o.f||'')}"></label><label>Referencia<input type="text" id="pt-${k}-n" value="${escapeHtml(o.nota||'')}" placeholder="${ph}"></label></div>
+      ${ptEquiv(o.monto, o.mon)}<button class="btn small" data-pt-save="${k}">Guardar</button></div>`; };
+    document.getElementById('pt-bloques').innerHTML = bStock
+      + simple('inventario','Bienes del local (inventario)','Estimado de lo que hay dentro del negocio: mobiliario, cartelería, equipos, instalaciones.','ej. estimado general')
+      + simple('llave','Valor llave del negocio','Lo que vale la marcha del negocio. Por ejemplo, un mes de venta promedio. Lo definís vos.','ej. promedio 2026 + IVA');
+    // Totales
+    const items = [
+      { n:'Mercadería', p: st ? ptPesos(st.monto, st.mon) : 0 },
+      { n:'Bienes del local', p: inv.monto>0 ? ptPesos(inv.monto, inv.mon) : 0 },
+      { n:'Valor llave', p: ll.monto>0 ? ptPesos(ll.monto, ll.mon) : 0 },
+    ];
+    const falta = items.some(x=>x.p==null);
+    const tot = items.reduce((s,x)=>s+(x.p||0),0);
+    const totBienes = (items[0].p||0) + (items[1].p||0);
+    const U = v => cot ? v/cot : null;
+    document.getElementById('pt-totales').innerHTML = `
+      <div class="kpi accent"><div class="label">Valor total del negocio (pesos)</div><div class="value">${ptFp(tot)}</div></div>
+      <div class="kpi accent"><div class="label">Valor total del negocio (dólares)</div><div class="value">${ptFu(U(tot))}</div></div>
+      <div class="kpi"><div class="label">Con IVA 22%${infoBadge('Informativo: el total multiplicado por 1,22. No se guarda en ningún lado.')}</div><div class="value" style="font-size:14px;white-space:normal;line-height:1.5;">${ptFp(tot*1.22)}<br>${ptFu(U(tot*1.22))}</div></div>
+      <div class="kpi"><div class="label">Solo bienes (mercadería + local)${infoBadge('Suma de mercadería a costo y bienes del local, sin el valor llave.')}</div><div class="value" style="font-size:14px;white-space:normal;line-height:1.5;">${ptFp(totBienes)}<br>${ptFu(U(totBienes))}</div></div>
+      ${falta ? '<div class="kpi"><div class="label">Aviso</div><div class="value" style="font-size:12px;white-space:normal;">Hay valores en dólares y no hay cotización: cargala arriba para sumarlos.</div></div>' : ''}
+      <div class="kpi" style="grid-column:1/-1;"><div class="label">Cómo se reparte</div>${items.map(x=>{ const pc = tot>0 ? Math.round((x.p||0)/tot*100) : 0; return `<div style="margin-top:8px;font-size:12px;display:flex;justify-content:space-between;"><span>${x.n}</span><span class="m">${pc}%</span></div><div class="pt-barra"><i style="width:${pc}%"></i></div>`; }).join('')}</div>`;
+  }
+  document.addEventListener('click', async ev=>{
+    const b = ev.target.closest && ev.target.closest('#panel-patrimonio button'); if(!b || !PT.cfg) return;
+    const g = id => document.getElementById(id);
+    if(b.id==='pt-cotOk'){ const v = parseFloat(g('pt-cotManual').value); PT.cfg.cotManual = v>0 ? v : null; await ptGuardar(); renderPatrimonio(); return; }
+    if(b.id==='pt-st-add'){
+      const monto = parseFloat(g('pt-st-m').value), f = g('pt-st-f').value;
+      if(!(monto>0) || !f){ showToast('Poné la fecha y el monto del balance', true); return; }
+      PT.cfg.stock.historial.push({ f, monto, mon:g('pt-st-mon').value, nota:g('pt-st-n').value.trim() });
+      await ptGuardar(); renderPatrimonio(); return;
+    }
+    if(b.dataset.ptDel!==undefined){
+      const hist = PT.cfg.stock.historial.slice().sort((a,c)=>String(c.f).localeCompare(String(a.f)));
+      const h = hist[parseInt(b.dataset.ptDel,10)]; if(!h) return;
+      if(!confirm('¿Borrar el balance del '+ptFechaTxt(h.f)+'?')) return;
+      PT.cfg.stock.historial = PT.cfg.stock.historial.filter(x=>x!==PT.cfg.stock.historial.find(y=>y.f===h.f && y.monto===h.monto && y.mon===h.mon && (y.nota||'')===(h.nota||'')));
+      await ptGuardar(); renderPatrimonio(); return;
+    }
+    if(b.dataset.ptSave){
+      const k = b.dataset.ptSave, monto = parseFloat(g('pt-'+k+'-m').value) || 0;
+      PT.cfg[k] = { monto, mon:g('pt-'+k+'-mon').value, f:g('pt-'+k+'-f').value, nota:g('pt-'+k+'-n').value.trim() };
+      await ptGuardar(); renderPatrimonio(); return;
     }
   });
 
