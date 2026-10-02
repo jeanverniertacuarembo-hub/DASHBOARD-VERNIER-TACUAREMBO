@@ -5629,6 +5629,18 @@
       if(!v.venta && !v.compra && !v.gasto && !v.sueldo && !v.deuda) return;
       meses.push({ anio:a, mes:m, venta:asRed(v.venta), venta_efectivo:asRed(efe), venta_credito:asRed(v.venta-efe), compras:asRed(v.compra), costo_fijo:asRed(v.gasto), sueldo_andres:asRed(v.sueldo), intereses_y_deuda:asRed(v.deuda) });
     }));
+    // Totales YA CALCULADOS (la IA se equivoca al sumar listas largas): por año y de todo el histórico.
+    const totales_por_anio = {};
+    let hist = { venta:0, compras:0, costo_fijo:0, sueldo_andres:0, intereses_y_deuda:0, meses_con_venta:0 };
+    meses.forEach(m=>{
+      const t = totales_por_anio[m.anio] = totales_por_anio[m.anio] || { venta:0, venta_efectivo:0, venta_credito:0, compras:0, costo_fijo:0, sueldo_andres:0, intereses_y_deuda:0, meses_con_venta:0 };
+      ['venta','venta_efectivo','venta_credito','compras','costo_fijo','sueldo_andres','intereses_y_deuda'].forEach(k=>{ t[k]+=m[k]; });
+      if(m.venta>0) t.meses_con_venta++;
+      hist.venta+=m.venta; hist.compras+=m.compras; hist.costo_fijo+=m.costo_fijo; hist.sueldo_andres+=m.sueldo_andres; hist.intereses_y_deuda+=m.intereses_y_deuda; if(m.venta>0) hist.meses_con_venta++;
+    });
+    hist.utilidad = hist.venta - hist.compras - hist.costo_fijo;
+    Object.values(totales_por_anio).forEach(t=>{ t.utilidad = t.venta - t.compras - t.costo_fijo; });
+    const mesesRecientes = meses.slice(-36);
     const desde = anios.length ? Math.max(anios[0], hoy.anio-2) : hoy.anio;
     const items = {};
     (data.presupuesto||[]).forEach(r=>{
@@ -5642,7 +5654,9 @@
     const caja = iniCajaTotalAl(data, hoy.anio, hoy.mes);
     return {
       hoy: { anio:hoy.anio, mes:hoy.mes }, moneda:'pesos uruguayos',
-      meses, gastos_por_item: items,
+      nota: 'Los totales_por_anio y total_historico ya están calculados: usalos tal cual y no los recalcules sumando meses. El detalle mensual (meses_ultimos_36) sirve para comparar meses puntuales.',
+      total_historico: hist, totales_por_anio,
+      meses_ultimos_36: mesesRecientes, gastos_por_item: items,
       caja_total_hoy: caja ? asRed(caja.total) : null,
       categorias_de_gasto: asCategoriasGasto(data).map(c=>c.nombre),
       deudas: 'NO DISPONIBLES: por privacidad no se envían deudas ni nombres de acreedores o proveedores',
@@ -6146,10 +6160,10 @@
     const utilidadAnio = ventaTotalAnio - compraTotalAnio - gastoTotalAnio;
 
     document.getElementById('gr-kpis').innerHTML = `
-      <div class="graf-kpi"><div class="label">Venta ${anioEfectivo}</div><div class="value">${grMoneyStr(ventaTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Compras ${anioEfectivo}</div><div class="value">${grMoneyStr(compraTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Gastos fijos ${anioEfectivo}</div><div class="value">${grMoneyStr(gastoTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Resultado ${anioEfectivo}</div><div class="value" style="color:${utilidadAnio>=0?GR_COLORS.green:GR_COLORS.red};">${grMoneyStr(utilidadAnio)}</div></div>`;
+      <div class="graf-kpi"><div class="label">Venta ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value">${grMoneyStr(ventaTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Compras ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value">${grMoneyStr(compraTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Gastos fijos ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value">${grMoneyStr(gastoTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Resultado ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value" style="color:${utilidadAnio>=0?GR_COLORS.green:GR_COLORS.red};">${grMoneyStr(utilidadAnio)}</div></div>`;
 
     // 0) Promedios históricos (venta, compras y costo fijo — por año y por mes).
     // Siempre usa TODO el histórico, no depende del año elegido arriba.

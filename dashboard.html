@@ -798,7 +798,7 @@
       </div>
       </section>
 
-      <div class="collapsible open" style="margin-top:16px;">
+      <div class="collapsible" style="margin-top:16px;">
         <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Punto de equilibrio</h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
           <p class="pe-intro">Cuánto necesitás vender para cubrir el costo fijo del negocio, <b>sin contar tu sueldo ni los pagos de deuda</b>.</p>
@@ -1043,7 +1043,7 @@
         <div class="section-title"><h2>Panel — Ventas, Compras y Gastos</h2><span class="hint">Vista rápida y comparativa</span></div>
         <div class="kpis" id="resumenKpis"></div>
         <div class="kpis" id="resumenKpisIva" style="margin-top:10px;"></div>
-        <div class="collapsible open" id="collapse-resumen-exceso" style="margin-top:14px;">
+        <div class="collapsible" id="collapse-resumen-exceso" style="margin-top:14px;">
           <div class="collapsible-head" onclick="toggleCollapse('collapse-resumen-exceso')"><h3>¿Cuánto me paso de costos?</h3><span class="chev">▾</span></div>
           <div class="collapsible-body">
             <p class="pe-intro" id="resumenExcesoIntro"></p>
@@ -1094,7 +1094,7 @@
 
       <div class="kpis" id="pa-kpis" style="margin-top:14px;"></div>
 
-      <div class="collapsible open" id="pa-collapsePresupuesto">
+      <div class="collapsible" id="pa-collapsePresupuesto">
         <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuesto por ítem — <span id="pa-anioObjLabel"></span></h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
           <div class="gastos-grid"><table>
@@ -1104,7 +1104,7 @@
         </div>
       </div>
 
-      <div class="collapsible open" id="pa-collapseComparativo">
+      <div class="collapsible" id="pa-collapseComparativo">
         <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuestado vs. Real — <span id="pa-anioObjLabel2"></span></h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
           <p class="hint" style="margin:0 0 10px;font-size:11.5px;color:var(--ink-soft);">Compara cada ítem contra lo presupuestado de los mismos meses que ya tienen gastos reales cargados. Se actualiza solo a medida que cargás Gastos.</p>
@@ -1329,7 +1329,7 @@
       <div id="obj-banner"></div>
       <div class="section-title"><h2>Objetivos</h2><span class="hint" id="obj-periodoHint">Lectura orientativa, no reemplaza a un contador</span></div>
 
-      <div class="collapsible open" id="obj-semaforoCol">
+      <div class="collapsible" id="obj-semaforoCol">
         <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>1 · Semáforo: la realidad, indicador por indicador</h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
           <p class="obj-intro">Cada indicador se mide sobre la <b>base de análisis</b> que elijas acá abajo (por defecto, los últimos 12 meses ya cerrados: el mes en curso no cuenta) y se compara contra una regla simple: <b>verde</b> = sano, <b>amarillo</b> = ojo, <b>rojo</b> = hay que actuar. Las reglas son orientativas y las podés ajustar abajo a tu criterio.</p>
@@ -1900,6 +1900,11 @@
     await Promise.all([loadVentas(), loadCompras(), loadPresupuesto()]);
     renderResumenPanel();
   }
+
+  // Meses transcurridos = hasta el último mes con dato cargado (ene → último mes con valor).
+  // Sirve para promediar sin dividir por 12 cuando el año está en curso.
+  function mesesCorridos(valoresPorMes){ let u=-1; (valoresPorMes||[]).forEach((v,i)=>{ if((v||0)>0) u=i; }); return u+1; }
+  const NOTA_PROM = (n)=>infoBadge(`Dividido entre los ${n} meses transcurridos (de enero hasta el último mes con datos cargados), no entre 12.`);
 
   // ---------- PANEL (resumen comparativo Ventas / Compras / Gastos) ----------
   function renderResumenPanel(){
@@ -2684,12 +2689,13 @@
     </tr>`;
     document.getElementById('ventasTableBody').innerHTML = bodyHtml + totalRowHtml;
     const sinIva = total/1.22, valorIva = total - sinIva;
+    const mesesVta = mesesCorridos(MESES.map(m=>((ventasRowFor(m)?.efectivo)||0)+((ventasRowFor(m)?.credito)||0)));
     document.getElementById('ventasKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Venta total ${state.activeYear}</div><div class="value">$ ${fmt(total)}</div></div>
       <div class="kpi"><div class="label">Sin IVA</div><div class="value">$ ${fmt(sinIva)}</div></div>
       <div class="kpi"><div class="label">IVA</div><div class="value">$ ${fmt(valorIva)}</div></div>
-      <div class="kpi"><div class="label">% Efectivo</div><div class="value">${total?fmtPct(efectivoTot/total):'0.0%'}</div></div>
-      <div class="kpi"><div class="label">% Crédito</div><div class="value">${total?fmtPct(creditoTot/total):'0.0%'}</div></div>`;
+      <div class="kpi"><div class="label">% Efectivo / % Crédito</div><div class="value">${total?fmtPct(efectivoTot/total):'0.0%'} / ${total?fmtPct(creditoTot/total):'0.0%'}</div></div>
+      <div class="kpi"><div class="label">Promedio mensual de venta${NOTA_PROM(mesesVta)}</div><div class="value">$ ${fmt(mesesVta ? total/mesesVta : 0)}</div></div>`;
     document.querySelector('#panel-ventas > .banner')?.remove();
     renderVentasChart();
     renderSalud();
@@ -2877,13 +2883,15 @@
     </tr>`;
     document.getElementById('comprasTableBody').innerHTML = bodyHtml + totalRowHtml;
     const compraSinIva = total/1.22, ivaCompra = total - compraSinIva;
+    const mesesCpa = mesesCorridos(MESES.map(m=>comprasValorMes(m,'inicial')+comprasValorMes(m,'reposicion')+comprasValorMes(m,'otros')));
     document.getElementById('comprasKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Compra total ${state.activeYear}</div><div class="value">$ ${fmt(total)}</div></div>
       <div class="kpi"><div class="label">Compra sin IVA</div><div class="value">$ ${fmt(compraSinIva)}</div></div>
       <div class="kpi"><div class="label">IVA</div><div class="value">$ ${fmt(ivaCompra)}</div></div>
       <div class="kpi"><div class="label">Pedido inicial</div><div class="value">$ ${fmt(inicialTot)}</div></div>
       <div class="kpi"><div class="label">Reposición</div><div class="value">$ ${fmt(reposicionTot)}</div></div>
-      <div class="kpi"><div class="label">Promedio reposición</div><div class="value">$ ${fmt(reposicionTot/12)}</div></div>`;
+      <div class="kpi"><div class="label">Promedio reposición${NOTA_PROM(mesesCpa)}</div><div class="value">$ ${fmt(mesesCpa ? reposicionTot/mesesCpa : 0)}</div></div>
+      <div class="kpi"><div class="label">Promedio de compra mensual${NOTA_PROM(mesesCpa)}</div><div class="value">$ ${fmt(mesesCpa ? total/mesesCpa : 0)}</div></div>`;
     document.querySelector('#panel-compras > .banner')?.remove();
     renderComprasChart();
     renderSalud();
@@ -3413,15 +3421,16 @@
         <td class="mono col-total">$ ${fmt(grandTotal)}</td>
       </tr>` : '';
     document.getElementById('presupuestoTableBody').innerHTML = (bodyHtml || `<tr><td colspan="14" class="empty-row">Todavía no hay ítems — usá "+ Nuevo ítem"</td></tr>`) + totalRowHtml;
+    const mesesGto = mesesCorridos(monthTotals);
     let mayorGastoCat = null, mayorGastoAvg = 0;
     rowTotalsByCat.filter(x=>!x.excluida).forEach(({cat, rowTotal})=>{
-      const avg = rowTotal/12;
+      const avg = mesesGto ? rowTotal/mesesGto : 0;
       if(avg > mayorGastoAvg){ mayorGastoAvg = avg; mayorGastoCat = cat; }
     });
     document.getElementById('presupuestoKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Gasto total ${state.activeYear}</div><div class="value">$ ${fmt(grandTotal)}</div></div>
-      <div class="kpi"><div class="label">Promedio mensual (con sueldo)</div><div class="value">$ ${fmt(grandTotal/12)}</div></div>
-      <div class="kpi"><div class="label">Promedio mensual (sin sueldo)</div><div class="value">$ ${fmt((grandTotal-sueldoTotal)/12)}</div></div>
+      <div class="kpi"><div class="label">Promedio mensual (con sueldo)${NOTA_PROM(mesesGto)}</div><div class="value">$ ${fmt(mesesGto ? grandTotal/mesesGto : 0)}</div></div>
+      <div class="kpi"><div class="label">Promedio mensual (sin sueldo)${NOTA_PROM(mesesGto)}</div><div class="value">$ ${fmt(mesesGto ? (grandTotal-sueldoTotal)/mesesGto : 0)}</div></div>
       <div class="kpi"><div class="label">Mayor gasto promedio</div><div class="value" style="font-size:13px;line-height:1.3;white-space:normal;">${mayorGastoCat ? escapeHtml(mayorGastoCat)+' — $ '+fmt(mayorGastoAvg) : '—'}</div></div>`;
     document.querySelector('#panel-presupuesto > .banner')?.remove();
     renderGroupedBarChart('presupuesto-barchart', [
@@ -5953,10 +5962,10 @@
     const utilidadAnio = ventaTotalAnio - compraTotalAnio - gastoTotalAnio;
 
     document.getElementById('gr-kpis').innerHTML = `
-      <div class="graf-kpi"><div class="label">Venta ${anioEfectivo}</div><div class="value">${grMoneyStr(ventaTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Compras ${anioEfectivo}</div><div class="value">${grMoneyStr(compraTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Gastos fijos ${anioEfectivo}</div><div class="value">${grMoneyStr(gastoTotalAnio)}</div></div>
-      <div class="graf-kpi"><div class="label">Resultado ${anioEfectivo}</div><div class="value" style="color:${utilidadAnio>=0?GR_COLORS.green:GR_COLORS.red};">${grMoneyStr(utilidadAnio)}</div></div>`;
+      <div class="graf-kpi"><div class="label">Venta ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value">${grMoneyStr(ventaTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Compras ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value">${grMoneyStr(compraTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Gastos fijos ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value">${grMoneyStr(gastoTotalAnio)}</div></div>
+      <div class="graf-kpi"><div class="label">Resultado ${esTodos?'(todos los años)':anioEfectivo}</div><div class="value" style="color:${utilidadAnio>=0?GR_COLORS.green:GR_COLORS.red};">${grMoneyStr(utilidadAnio)}</div></div>`;
 
     // 0) Promedios históricos (venta, compras y costo fijo — por año y por mes).
     // Siempre usa TODO el histórico, no depende del año elegido arriba.
