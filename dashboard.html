@@ -5649,6 +5649,18 @@
     });
     return Array.from(set, ([nombre,tipo])=>({ nombre, tipo })).sort((a,b)=>a.nombre.localeCompare(b.nombre));
   }
+  // Cuentas y categorías (solo nombres) de Movimientos diarios, para que la IA elija dónde cargar.
+  function asCatalogoMovimientos(data){
+    const cuentas = {};
+    (data.flujoCaja||[]).forEach(r=>{
+      if(!r.cuenta || !r.categoria) return;
+      const c = cuentas[r.cuenta] || (cuentas[r.cuenta] = { ingresos:new Set(), gastos:new Set() });
+      (r.tipo==='ingreso' ? c.ingresos : c.gastos).add(r.categoria);
+    });
+    const out = {};
+    Object.keys(cuentas).sort().forEach(k=>{ out[k] = { categorias_de_ingreso:Array.from(cuentas[k].ingresos).sort(), categorias_de_gasto:Array.from(cuentas[k].gastos).sort() }; });
+    return out;
+  }
   function asContextoIA(data){
     const hoy = iniHoy(), kHoy = periodoKey(hoy.anio, hoy.mes);
     const anios = Array.from(new Set([...(data.ventas||[]).map(r=>r.anio), ...(data.compras||[]).map(r=>r.anio), ...(data.presupuesto||[]).map(r=>r.anio)].filter(a=>a!=null))).sort((a,b)=>a-b);
@@ -5690,6 +5702,7 @@
       meses_ultimos_36: mesesRecientes, gastos_por_item: items,
       caja_total_hoy: caja ? asRed(caja.total) : null,
       categorias_de_gasto: asCategoriasGasto(data).map(c=>c.nombre),
+      movimientos_diarios: asCatalogoMovimientos(data),
       deudas: 'NO DISPONIBLES: por privacidad no se envían deudas ni nombres de acreedores o proveedores',
     };
   }
@@ -5709,6 +5722,17 @@
     const anio = parseInt(a.anio,10) || iniHoy().anio;
     const monto = Math.round(parseFloat(a.monto)*100)/100;
     if(!mes || !(anio>=2000 && anio<=2100) || !(monto>0) || monto>100000000) return null;
+    if(a.tipo==='agregar_movimiento'){
+      const cat0 = asCatalogoMovimientos(data);
+      const cuenta = Object.keys(cat0).find(k=>asNorm(k).trim()===asNorm(a.cuenta).trim());
+      const d0 = asNorm(a.detalle||'').trim();
+      const mov = /^ingr/.test(d0) ? 'ingreso' : /^gast|^egre/.test(d0) ? 'gasto' : null;
+      if(!cuenta || !mov) return null;
+      const lista = mov==='ingreso' ? cat0[cuenta].categorias_de_ingreso : cat0[cuenta].categorias_de_gasto;
+      const categoria = lista.find(c=>asNorm(c).trim()===asNorm(a.categoria).trim());
+      if(!categoria) return null;
+      return { tipo:'agregar_movimiento', cuenta, movimiento:mov, categoria, mes, anio, monto };
+    }
     if(a.tipo==='agregar_gasto'){
       const cats = asCategoriasGasto(data);
       const cat = cats.find(c=>asNorm(c.nombre).trim()===asNorm(a.categoria).trim());
@@ -5729,7 +5753,29 @@
     return null;
   }
   const AS_TABLA_ACC = { agregar_gasto:'presupuesto', agregar_venta:'ventas', agregar_compra:'compras' };
+  async function asGuardarMovimiento(a){
+    const { data:ex, error:e1 } = await sb.from('flujo_caja').select('*').eq('cuenta',a.cuenta).eq('anio',a.anio).eq('mes',a.mes).eq('tipo',a.movimiento).eq('categoria',a.categoria).limit(1);
+    if(e1) throw e1;
+    if(ex && ex.length){
+      const { error } = await sb.from('flujo_caja').update({ monto: Math.round(((ex[0].monto||0)+a.monto)*100)/100 }).eq('id', ex[0].id);
+      if(error) throw error;
+    } else {
+      const { error } = await sb.from('flujo_caja').insert({ cuenta:a.cuenta, anio:a.anio, mes:a.mes, tipo:a.movimiento, categoria:a.categoria, monto:a.monto });
+      if(error) throw error;
+    }
+    try{ await sb.from('flujo_caja_movimientos').insert({ cuenta:a.cuenta, anio:a.anio, mes:a.mes, tipo:a.movimiento, categoria:a.categoria, delta:a.monto }); }catch(e){}
+    // Si es un gasto marcado como "Gasto fijo", se actualiza también Gestión > Gastos (igual que al cargarlo a mano).
+    if(a.movimiento==='gasto'){
+      try{
+        if(!state.flujoGastoOperativo){ const q = await sb.from('flujo_gasto_operativo').select('categoria'); state.flujoGastoOperativo = (q.data||[]).map(r=>r.categoria); }
+        if(state.flujoGastoOperativo.includes(a.categoria)) await syncGastoOperativoPeriodo(a.categoria, a.anio, a.mes);
+      }catch(e){}
+    }
+    state.iniData = null;
+    try{ if(state.flujoActiveCuenta) await loadFlujoData(); }catch(e){}
+  }
   async function asGuardarAccion(a){
+    if(a.tipo==='agregar_movimiento') return asGuardarMovimiento(a);
     const tabla = AS_TABLA_ACC[a.tipo];
     const campo = a.tipo==='agregar_gasto' ? 'monto' : a.campo;
     let q = sb.from(tabla).select('*').eq('anio',a.anio).eq('mes',a.mes);
@@ -5758,7 +5804,10 @@
     const id = ++asAccionN; asAcciones.set(id, a);
     const mesTxt = a.mes.charAt(0)+a.mes.slice(1).toLowerCase();
     const NOM = { efectivo:'Venta · efectivo', credito:'Venta · crédito', inicial:'Compra · pedido inicial', reposicion:'Compra · reposición', otros:'Compra · otros' };
-    const tit = a.tipo==='agregar_gasto' ? 'Voy a agregar este gasto:' : a.tipo==='agregar_venta' ? 'Voy a agregar esta venta:' : 'Voy a agregar esta compra:';
+    const tit = a.tipo==='agregar_gasto' ? 'Voy a agregar este gasto en Gestión:' : a.tipo==='agregar_venta' ? 'Voy a agregar esta venta en Gestión:' : 'Voy a agregar esta compra en Gestión:';
+    if(a.tipo==='agregar_movimiento'){
+      return `<div class="as-acc" data-id="${id}"><div class="as-acc-t">Voy a cargar en Movimientos diarios:</div><div class="as-acc-d"><b><span class="as-m">$ ${fmt(a.monto)}</span></b> como <b>${a.movimiento==='ingreso'?'ingreso':'gasto'}</b> en <b>${escapeHtml(a.categoria)}</b><br>Cuenta ${escapeHtml(a.cuenta)} · ${mesTxt} ${a.anio} · se suma a lo que ya haya cargado</div><div class="as-acc-b"><button type="button" data-asacc="ok">Confirmar</button><button type="button" data-asacc="no">Cancelar</button></div></div>`;
+    }
     const donde = a.tipo==='agregar_gasto' ? escapeHtml(a.categoria) : NOM[a.campo];
     return `<div class="as-acc" data-id="${id}"><div class="as-acc-t">${tit}</div><div class="as-acc-d"><b><span class="as-m">$ ${fmt(a.monto)}</span></b> en <b>${donde}</b><br>${mesTxt} ${a.anio} · se suma a lo que ya haya cargado</div><div class="as-acc-b"><button type="button" data-asacc="ok">Confirmar</button><button type="button" data-asacc="no">Cancelar</button></div></div>`;
   }
@@ -5771,7 +5820,7 @@
     try{
       await asGuardarAccion(a);
       card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r ok">Listo, quedó cargado. Si te equivocaste, lo podés deshacer desde el Historial.</span>';
-      showToast(a.tipo==='agregar_gasto'?'Gasto agregado':a.tipo==='agregar_venta'?'Venta agregada':'Compra agregada');
+      showToast(a.tipo==='agregar_movimiento'?'Movimiento agregado':a.tipo==='agregar_gasto'?'Gasto agregado':a.tipo==='agregar_venta'?'Venta agregada':'Compra agregada');
     }catch(e){
       card.dataset.hecho = '';
       card.querySelector('.as-acc-b').innerHTML = `<span class="as-acc-r err">No se pudo guardar (${escapeHtml(e.message||String(e))}).</span>`;
