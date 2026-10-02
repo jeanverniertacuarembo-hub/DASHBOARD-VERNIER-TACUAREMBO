@@ -1962,14 +1962,14 @@
     const gastoTotal = gastosPorMes.reduce((a,b)=>a+b,0);
     const resultado = ventaTotal - compraTotal - gastoTotal;
     const margen = ventaTotal ? resultado/ventaTotal : 0;
-    const mesesConVenta = ventasPorMes.filter(v=>v>0).length;
+    const mesesConVenta = mesesCorridos(ventasPorMes);
     document.getElementById('resumenKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Venta total ${state.activeYear}</div><div class="value">$ ${fmt(ventaTotal)}</div></div>
       <div class="kpi"><div class="label">Compra total</div><div class="value">$ ${fmt(compraTotal)}</div></div>
       <div class="kpi"><div class="label">Gasto total</div><div class="value">$ ${fmt(gastoTotal)}</div></div>
       <div class="kpi"><div class="label">Resultado</div><div class="value" style="color:${resultado>=0?'var(--good)':'var(--bad)'};">$ ${fmt(resultado)}</div></div>
       <div class="kpi"><div class="label">Margen</div><div class="value">${fmtPct(margen)}</div></div>
-      <div class="kpi"><div class="label">Promedio mensual de venta${infoBadge(`Venta total de ${state.activeYear} dividida los ${mesesConVenta} meses que ya tienen venta cargada (si el año está en curso, no divide por 12).`)}</div><div class="value">$ ${fmt(mesesConVenta ? ventaTotal/mesesConVenta : 0)}</div></div>`;
+      <div class="kpi"><div class="label">Promedio mensual de venta${infoBadge(`Venta total de ${state.activeYear} dividida entre los ${mesesConVenta} meses transcurridos (de enero hasta el último mes con venta cargada), no entre 12.`)}</div><div class="value">$ ${fmt(mesesConVenta ? ventaTotal/mesesConVenta : 0)}</div></div>`;
     const ventaSinIva = ventaTotal/1.22, compraSinIva = compraTotal/1.22;
     const ivaVenta = ventaTotal - ventaSinIva, ivaCompra = compraTotal - compraSinIva;
     const diferenciaIva = ivaVenta - ivaCompra;
@@ -3488,7 +3488,7 @@
       retiroBox.innerHTML = catsSueldo.length ? `
         <div class="kpis" style="margin-bottom:10px;">
           <div class="kpi accent"><div class="label">Total ${state.activeYear}</div><div class="value">$ ${fmt(sueldoTotal)}</div></div>
-          <div class="kpi"><div class="label">Promedio mensual</div><div class="value">$ ${fmt(sueldoTotal/12)}</div></div>
+          <div class="kpi"><div class="label">Promedio mensual${NOTA_PROM(mesesCorridos(sueldoMonthTotals))}</div><div class="value">$ ${fmt(mesesCorridos(sueldoMonthTotals) ? sueldoTotal/mesesCorridos(sueldoMonthTotals) : 0)}</div></div>
         </div>
         <div class="gastos-grid"><table>
           <thead>${PRESUPUESTO_HEAD_NORMAL}</thead>
@@ -3516,7 +3516,7 @@
     document.getElementById('interesesTableBody').innerHTML = (interesBodyHtml || `<tr><td colspan="14" class="empty-row">Sin ítems todavía</td></tr>`) + interesTotalRowHtml;
     document.getElementById('interesesKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Total intereses/deuda ${state.activeYear}</div><div class="value">$ ${fmt(interesTotal)}</div></div>
-      <div class="kpi"><div class="label">Promedio mensual</div><div class="value">$ ${fmt(interesTotal/12)}</div></div>`;
+      <div class="kpi"><div class="label">Promedio mensual${NOTA_PROM(mesesCorridos(interesMonthTotals))}</div><div class="value">$ ${fmt(mesesCorridos(interesMonthTotals) ? interesTotal/mesesCorridos(interesMonthTotals) : 0)}</div></div>`;
 
     // --- Bloque aparte: Compras — Pago de reposición y vales ---
     document.getElementById('comprasReposTableHead').innerHTML = PRESUPUESTO_HEAD_NORMAL;
@@ -3535,7 +3535,7 @@
     document.getElementById('comprasReposTableBody').innerHTML = (compraBodyHtml || `<tr><td colspan="14" class="empty-row">Sin ítems todavía</td></tr>`) + compraTotalRowHtml;
     document.getElementById('comprasReposKpis').innerHTML = `
       <div class="kpi accent"><div class="label">Total compras/reposición ${state.activeYear}</div><div class="value">$ ${fmt(compraTotal)}</div></div>
-      <div class="kpi"><div class="label">Promedio mensual</div><div class="value">$ ${fmt(compraTotal/12)}</div></div>`;
+      <div class="kpi"><div class="label">Promedio mensual${NOTA_PROM(mesesCorridos(compraMonthTotals))}</div><div class="value">$ ${fmt(mesesCorridos(compraMonthTotals) ? compraTotal/mesesCorridos(compraMonthTotals) : 0)}</div></div>`;
 
     renderPresupuestoOcultosBox();
     renderSalud();
@@ -5702,33 +5702,65 @@
     }).join('');
   }
   // Valida una acción propuesta por la IA contra tus datos reales. Devuelve la acción limpia o null.
+  // Tipos: agregar_gasto (categoría), agregar_venta (efectivo|crédito), agregar_compra (inicial|reposición|otros).
   function asValidarAccion(a, data){
-    if(!a || a.tipo!=='agregar_gasto') return null;
-    const cats = asCategoriasGasto(data);
-    const cat = cats.find(c=>asNorm(c.nombre).trim()===asNorm(a.categoria).trim());
+    if(!a) return null;
     const mes = MESES.find(m=>asNorm(m)===asNorm(a.mes).trim());
     const anio = parseInt(a.anio,10) || iniHoy().anio;
     const monto = Math.round(parseFloat(a.monto)*100)/100;
-    if(!cat || !mes || !(anio>=2000 && anio<=2100) || !(monto>0) || monto>100000000) return null;
-    return { tipo:'agregar_gasto', categoria:cat.nombre, mes, anio, monto };
+    if(!mes || !(anio>=2000 && anio<=2100) || !(monto>0) || monto>100000000) return null;
+    if(a.tipo==='agregar_gasto'){
+      const cats = asCategoriasGasto(data);
+      const cat = cats.find(c=>asNorm(c.nombre).trim()===asNorm(a.categoria).trim());
+      if(!cat) return null;
+      return { tipo:'agregar_gasto', categoria:cat.nombre, mes, anio, monto };
+    }
+    const d = asNorm(a.detalle||a.categoria||'').trim();
+    if(a.tipo==='agregar_venta'){
+      const campo = /^cred|tarjeta/.test(d) ? 'credito' : /^efec|contado/.test(d) ? 'efectivo' : null;
+      if(!campo) return null;
+      return { tipo:'agregar_venta', campo, mes, anio, monto };
+    }
+    if(a.tipo==='agregar_compra'){
+      const campo = /inicial|pedido/.test(d) ? 'inicial' : /repos/.test(d) ? 'reposicion' : /^otro/.test(d) ? 'otros' : null;
+      if(!campo) return null;
+      return { tipo:'agregar_compra', campo, mes, anio, monto };
+    }
+    return null;
   }
-  async function asGuardarGasto(a){
-    const { data:ex, error:e1 } = await sb.from('presupuesto').select('id,monto').eq('anio',a.anio).eq('mes',a.mes).eq('categoria',a.categoria).limit(1);
+  const AS_TABLA_ACC = { agregar_gasto:'presupuesto', agregar_venta:'ventas', agregar_compra:'compras' };
+  async function asGuardarAccion(a){
+    const tabla = AS_TABLA_ACC[a.tipo];
+    const campo = a.tipo==='agregar_gasto' ? 'monto' : a.campo;
+    let q = sb.from(tabla).select('*').eq('anio',a.anio).eq('mes',a.mes);
+    if(a.tipo==='agregar_gasto') q = q.eq('categoria',a.categoria);
+    const { data:ex, error:e1 } = await q.limit(1);
     if(e1) throw e1;
     if(ex && ex.length){
-      const { error } = await sb.from('presupuesto').update({ monto: Math.round(((ex[0].monto||0)+a.monto)*100)/100 }).eq('id', ex[0].id);
+      const { error } = await sb.from(tabla).update({ [campo]: Math.round(((ex[0][campo]||0)+a.monto)*100)/100 }).eq('id', ex[0].id);
       if(error) throw error;
     } else {
-      const { error } = await sb.from('presupuesto').insert({ anio:a.anio, mes:a.mes, categoria:a.categoria, monto:a.monto });
+      let fila;
+      if(a.tipo==='agregar_gasto') fila = { anio:a.anio, mes:a.mes, categoria:a.categoria, monto:a.monto };
+      else if(a.tipo==='agregar_venta') fila = { anio:a.anio, mes:a.mes, efectivo:null, credito:null, [campo]:a.monto };
+      else fila = { anio:a.anio, mes:a.mes, inicial:null, reposicion:null, otros:null, [campo]:a.monto };
+      const { error } = await sb.from(tabla).insert(fila);
       if(error) throw error;
     }
     state.iniData = null;
-    try{ await loadPresupuesto(); }catch(e){}
+    try{
+      if(a.tipo==='agregar_gasto') await loadPresupuesto();
+      else if(a.tipo==='agregar_venta') await loadVentas();
+      else await loadCompras();
+    }catch(e){}
   }
   function asTarjetaAccion(a){
     const id = ++asAccionN; asAcciones.set(id, a);
     const mesTxt = a.mes.charAt(0)+a.mes.slice(1).toLowerCase();
-    return `<div class="as-acc" data-id="${id}"><div class="as-acc-t">Voy a agregar este gasto:</div><div class="as-acc-d"><b><span class="as-m">$ ${fmt(a.monto)}</span></b> en <b>${escapeHtml(a.categoria)}</b><br>${mesTxt} ${a.anio} · se suma a lo que ya haya cargado</div><div class="as-acc-b"><button type="button" data-asacc="ok">Confirmar</button><button type="button" data-asacc="no">Cancelar</button></div></div>`;
+    const NOM = { efectivo:'Venta · efectivo', credito:'Venta · crédito', inicial:'Compra · pedido inicial', reposicion:'Compra · reposición', otros:'Compra · otros' };
+    const tit = a.tipo==='agregar_gasto' ? 'Voy a agregar este gasto:' : a.tipo==='agregar_venta' ? 'Voy a agregar esta venta:' : 'Voy a agregar esta compra:';
+    const donde = a.tipo==='agregar_gasto' ? escapeHtml(a.categoria) : NOM[a.campo];
+    return `<div class="as-acc" data-id="${id}"><div class="as-acc-t">${tit}</div><div class="as-acc-d"><b><span class="as-m">$ ${fmt(a.monto)}</span></b> en <b>${donde}</b><br>${mesTxt} ${a.anio} · se suma a lo que ya haya cargado</div><div class="as-acc-b"><button type="button" data-asacc="ok">Confirmar</button><button type="button" data-asacc="no">Cancelar</button></div></div>`;
   }
   async function asClickAccion(btn){
     const card = btn.closest('.as-acc'); if(!card || card.dataset.hecho) return;
@@ -5737,9 +5769,9 @@
     if(btn.dataset.asacc==='no'){ card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r">Cancelado. No se guardó nada.</span>'; return; }
     card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r">Guardando…</span>';
     try{
-      await asGuardarGasto(a);
+      await asGuardarAccion(a);
       card.querySelector('.as-acc-b').innerHTML = '<span class="as-acc-r ok">Listo, quedó cargado. Si te equivocaste, lo podés deshacer desde el Historial.</span>';
-      showToast('Gasto agregado');
+      showToast(a.tipo==='agregar_gasto'?'Gasto agregado':a.tipo==='agregar_venta'?'Venta agregada':'Compra agregada');
     }catch(e){
       card.dataset.hecho = '';
       card.querySelector('.as-acc-b').innerHTML = `<span class="as-acc-r err">No se pudo guardar (${escapeHtml(e.message||String(e))}).</span>`;
@@ -5781,7 +5813,7 @@
       const txt = (res && res.respuesta) || 'La IA no devolvió respuesta.';
       const accion = asValidarAccion(res && res.accion, data);
       let html = asFormatoIA(txt);
-      if(res && res.accion && !accion) html += '<p>No pude armar esa carga con seguridad (categoría, mes o monto no coinciden con tus datos). Decímelo de nuevo con la categoría exacta.</p>';
+      if(res && res.accion && !accion) html += '<p>No pude armar esa carga con seguridad (falta o no coincide algún dato: categoría, mes, monto, o si es efectivo/crédito o pedido inicial/reposición/otros). Decímelo de nuevo con ese detalle.</p>';
       if(accion) html += asTarjetaAccion(accion);
       burbuja.innerHTML = html + asSrc('Respuesta generada por IA (Gemini) a partir de resúmenes de tu dashboard, sin nombres. Puede equivocarse: chequeá los números importantes; no reemplaza a un contador.');
       asHist.push({ role:'user', content:texto }, { role:'assistant', content:txt });
@@ -5792,7 +5824,7 @@
   function asActualizarModo(){
     const sub = document.getElementById('asSub'), chk = document.getElementById('asIaChk');
     if(chk) chk.checked = asIaOn;
-    if(sub) sub.textContent = asIaOn ? 'Con IA: preguntá o pedime cargar un gasto' : 'Sin IA: responde con cálculos fijos';
+    if(sub) sub.textContent = asIaOn ? 'Con IA: preguntá o pedime cargar ventas, compras o gastos' : 'Sin IA: responde con cálculos fijos';
   }
   async function asVerEnviado(){
     const data = await asAsegurarDatos();
@@ -5828,7 +5860,7 @@
     } finally { asOcupado = false; }
   }
   function asSaludo(){
-    asAgregar('bot', '<details class="as-hola" open><summary>Hola, soy el asistente del dashboard</summary><p>Con el interruptor <b>IA</b> activado podés escribir lo que quieras sobre tus números (<i>"¿en qué mes gasté más?"</i>) o pedirme cargar un gasto (<i>"agregá $4.500 de luz en octubre"</i>). Sin la IA respondo con cálculos fijos.</p><p>A la IA solo le llegan <b>resúmenes sin nombres</b> de proveedores ni deudas. <a href="#" data-asver onclick="return false" style="color:var(--accent-ink);">Ver qué se envía</a></p><p style="margin-bottom:0">También podés elegir una pregunta de la lista (con <b>?</b>).</p></details>');
+    asAgregar('bot', '<details class="as-hola" open><summary>Hola, soy el asistente del dashboard</summary><p>Con el interruptor <b>IA</b> activado podés escribir lo que quieras sobre tus números (<i>"¿en qué mes gasté más?"</i>) o pedirme cargar ventas, compras o gastos (<i>"agregá $4.500 de luz en octubre"</i>, <i>"vendí $80.000 en efectivo hoy"</i>, <i>"compra de reposición por $120.000"</i>). Siempre te muestro una tarjeta para confirmar antes de guardar. Sin la IA respondo con cálculos fijos.</p><p>A la IA solo le llegan <b>resúmenes sin nombres</b> de proveedores ni deudas. <a href="#" data-asver onclick="return false" style="color:var(--accent-ink);">Ver qué se envía</a></p><p style="margin-bottom:0">También podés elegir una pregunta de la lista (con <b>?</b>).</p></details>');
   }
   function asReiniciar(){
     document.getElementById('asMsgs').innerHTML = '';
