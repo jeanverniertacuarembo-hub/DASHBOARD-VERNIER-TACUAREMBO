@@ -616,6 +616,23 @@
     .toast{bottom:90px;}
     .module-block header.app{padding:10px 14px 0;}
   }
+
+  /* Tarjetas de gráficos desplegables (cerradas por defecto) */
+  .graf-card.gc > h3{display:flex;align-items:center;cursor:pointer;user-select:none;margin:0;}
+  .graf-card.gc > h3::after{content:"▾";margin-left:auto;padding-left:10px;font-size:12px;color:#B8B8B2;transition:transform .15s;}
+  .graf-card.gc.open > h3::after{transform:rotate(180deg);}
+  .graf-card.gc > h3 .sec-move{order:2;}
+  .graf-card.gc .gc-body{display:none;margin-top:4px;}
+  .graf-card.gc.open .gc-body{display:block;}
+  .graf-card.gc:not(.open){padding-bottom:14px;}
+
+  /* Histórico del Panel desplegable (cerrado por defecto) */
+  .gc-hist .ini-hist-head h3{display:flex;align-items:center;cursor:pointer;user-select:none;}
+  .gc-hist .ini-hist-head h3::after{content:"▾";margin-left:10px;font-size:12px;color:#B8B8B2;transition:transform .15s;}
+  .gc-hist.open .ini-hist-head h3::after{transform:rotate(180deg);}
+  .gc-hist:not(.open) .ini-hist-ctrls,.gc-hist:not(.open) .ini-seg-ind,.gc-hist:not(.open) #ini-histBanner,.gc-hist:not(.open) #ini-histLegend,.gc-hist:not(.open) .graf-canvas-wrap,.gc-hist:not(.open) #ini-histHint,.gc-hist:not(.open) #ini-histSub{display:none;}
+  .gc-hist:not(.open) .ini-hist-head{margin-bottom:0;}
+  .gc-hist:not(.open){padding-bottom:14px;}
 </style>
 </head>
 <body class="amounts-hidden">
@@ -708,7 +725,7 @@
       </div>
       <div class="kpis" id="ini-kpiRow"></div>
 
-      <div class="graf-card" style="margin-top:16px;">
+      <div class="graf-card gc-hist" style="margin-top:16px;">
         <div class="ini-hist-head">
           <div>
             <h3>Histórico</h3>
@@ -744,14 +761,17 @@
       <div class="graf-kpis" id="gr-kpis"></div>
 
       <div class="graf-grid">
-        <div class="graf-card graf-wide">
+        <div class="graf-card gc graf-wide">
           <h3>Promedios históricos</h3>
+          <div class="gc-body">
           <p class="graf-sub" id="gr-promSub">Todo el histórico cargado, sin importar el año elegido arriba.</p>
           <div id="gr-promedios"></div>
+          </div>
         </div>
 
-        <div class="graf-card graf-wide" id="s-ventas-por-ano">
+        <div class="graf-card gc graf-wide" id="s-ventas-por-ano">
           <h3>Ventas</h3>
+          <div class="gc-body">
           <p class="graf-sub" id="gr-ventasSub"></p>
           <div class="gr-ctl">
             <div class="ini-seg" id="gr-ventasVista"><button type="button" data-v="mes" class="on">Mes a mes</button><button type="button" data-v="anio">Por año</button></div>
@@ -762,50 +782,61 @@
           </div>
           <div class="graf-legend" id="gr-ventasLegend"></div>
           <div class="graf-canvas-wrap" style="height:210px;"><canvas id="gr-chartVentas" role="img" aria-label="Barras de ventas: por año o mes a mes, comparando dos años"></canvas></div>
+          </div>
         </div>
 
-        <div class="graf-card graf-third">
+        <div class="graf-card gc graf-third">
           <h3>Efectivo vs. crédito</h3>
+          <div class="gc-body">
           <p class="graf-sub">Composición de la venta del período elegido.</p>
           <div style="display:flex;align-items:center;gap:16px;">
             <div class="graf-canvas-wrap" style="height:140px;width:140px;flex:none;"><canvas id="gr-chartEfeCred" role="img" aria-label="Dona de venta en efectivo contra venta a crédito"></canvas></div>
             <div class="graf-legend" id="gr-legendEfeCred" style="flex-direction:column;align-items:flex-start;margin:0;"></div>
           </div>
+          </div>
         </div>
 
-        <div class="graf-card graf-third">
+        <div class="graf-card gc graf-third">
           <h3>En qué se van los gastos fijos</h3>
+          <div class="gc-body">
           <p class="graf-sub">Composición del año elegido.</p>
           <div style="display:flex;align-items:center;gap:16px;">
             <div class="graf-canvas-wrap" style="height:140px;width:140px;flex:none;"><canvas id="gr-chartGastos" role="img" aria-label="Dona de composición de los gastos fijos"></canvas></div>
             <div class="graf-legend" id="gr-legendGastos" style="flex-direction:column;align-items:flex-start;margin:0;"></div>
           </div>
+          </div>
         </div>
 
-        <div class="graf-card graf-third">
+        <div class="graf-card gc graf-third">
           <h3>Compras por mes</h3>
+          <div class="gc-body">
           <p class="graf-sub" id="gr-comprasSub"></p>
           <div class="graf-legend">
             <span><i style="background:#8FE0D6;"></i>Pedido inicial</span>
             <span><i style="background:#FBBF6B;"></i>Reposición</span>
           </div>
           <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartCompras" role="img" aria-label="Barras apiladas de compras por mes, pedido inicial y reposición"></canvas></div>
+          </div>
         </div>
 
-        <div class="graf-card">
+        <div class="graf-card gc">
           <h3>Resultado mensual</h3>
+          <div class="gc-body">
           <p class="graf-sub">Venta − compras − gastos fijos. Verde gana, rojo pierde.</p>
           <div class="graf-canvas-wrap" style="height:190px;"><canvas id="gr-chartResultado" role="img" aria-label="Barras del resultado mensual, verde en ganancia y rojo en pérdida"></canvas></div>
+          </div>
         </div>
 
-        <div class="graf-card graf-wide">
+        <div class="graf-card gc graf-wide">
           <h3>Contexto general (tendencia)</h3>
+          <div class="gc-body">
           <p class="graf-sub" id="gr-contextoSub"></p>
           <div class="graf-legend">
             <span><i style="background:#4ADE80;"></i>Ventas</span>
             <span><i style="background:#FF8B66;"></i>Compras + Gastos fijos</span>
           </div>
           <div class="graf-canvas-wrap" style="height:210px;"><canvas id="gr-chartContexto" role="img" aria-label="Barras de ventas contra compras más gastos, mes a mes o año a año"></canvas></div>
+          </div>
         </div>
       </div>
       </section>
@@ -869,7 +900,7 @@
 
     <main>
       <section class="panel active" id="panel-ventas">
-        <div class="section-title"><h2>Resumen del año</h2><span class="hint">Tabla <code>ventas</code></span></div>
+        <div class="section-title"><h2>Resumen del año</h2></div>
         <div class="kpis" id="ventasKpis"></div>
         <div class="collapsible" id="collapse-ventas-chart">
           <div class="collapsible-head" onclick="toggleCollapse('collapse-ventas-chart')"><h3>Efectivo vs. Crédito por mes</h3><span class="chev">▾</span></div>
@@ -909,7 +940,7 @@
       </section>
 
       <section class="panel" id="panel-compras">
-        <div class="section-title"><h2>Resumen del año</h2><span class="hint">Tabla <code>compras</code></span></div>
+        <div class="section-title"><h2>Resumen del año</h2></div>
         <div class="kpis" id="comprasKpis"></div>
         <div class="collapsible" id="collapse-compras-chart">
           <div class="collapsible-head" onclick="toggleCollapse('collapse-compras-chart')"><h3>Pedido inicial vs. Reposición vs. Otros por mes</h3><span class="chev">▾</span></div>
@@ -973,7 +1004,7 @@
       </section>
 
       <section class="panel" id="panel-presupuesto">
-        <div class="section-title"><h2>Resumen del año</h2><span class="hint">Gastos · tabla <code>presupuesto</code></span></div>
+        <div class="section-title"><h2>Resumen del año</h2></div>
         <div class="kpis" id="presupuestoKpis"></div>
         <div class="collapsible" id="collapse-presupuesto-chart">
           <div class="collapsible-head" onclick="toggleCollapse('collapse-presupuesto-chart')"><h3>Gasto total por mes</h3><span class="chev">▾</span></div>
@@ -1089,7 +1120,7 @@
       </section>
 
       <section class="panel" id="panel-presupuestoanual">
-      <div class="section-title"><h2>Armar el presupuesto de un año</h2><span class="hint">Gastos fijos — proyectado a partir de un año de referencia</span></div>
+      <div class="section-title"><h2>Armar el presupuesto de un año</h2></div>
 
       <div class="card">
         <div class="filters" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;">
@@ -1140,7 +1171,7 @@
     </header>
     <main>
       <section class="panel active">
-        <div class="section-title"><h2>Resumen del período</h2><span class="hint">Tablas <code>flujo_caja</code> / <code>flujo_saldo_inicial</code></span></div>
+        <div class="section-title"><h2>Resumen del período</h2></div>
         <div id="flu-sinCuenta" class="banner todo" style="display:none;">Creá o elegí una cuenta arriba para empezar a cargar datos.</div>
         <div id="flu-cuentaActions" style="text-align:right;margin:-6px 0 10px;"><button class="btn danger small" id="btnDeleteFlujoCuenta">Borrar esta cuenta</button></div>
         <div class="kpis" id="flu-kpiRow"></div>
@@ -6772,6 +6803,21 @@
     if(name==='inicio') renderGraficos();
     if(name==='inicio' || name==='objetivos') loadInicio();
   }
+
+  // Tarjetas de gráficos del Panel: se despliegan al tocar el título (cerradas por defecto)
+  document.addEventListener('click', ev=>{
+    const hh = ev.target.closest && ev.target.closest('.gc-hist .ini-hist-head h3');
+    if(hh){ const c = hh.closest('.gc-hist'); c.classList.toggle('open');
+      if(c.classList.contains('open')) setTimeout(()=>{ try{ const ch = Chart.getChart(document.getElementById('ini-histCanvas')); if(ch){ ch.resize(); ch.update('none'); } }catch(e){} },30);
+      return; }
+    const h = ev.target.closest && ev.target.closest('.graf-card.gc > h3');
+    if(!h || ev.target.closest('.sec-move')) return;
+    const card = h.parentElement;
+    card.classList.toggle('open');
+    if(card.classList.contains('open')){
+      setTimeout(()=>{ try{ card.querySelectorAll('canvas').forEach(c=>{ const ch = window.Chart && Chart.getChart(c); if(ch){ ch.resize(); ch.update('none'); } }); }catch(e){} }, 30);
+    }
+  });
 
   function toggleCollapse(id){
     document.getElementById(id).classList.toggle('open');
