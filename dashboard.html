@@ -2876,14 +2876,32 @@
   // Suma (o resta) delta al saldo_actual de UN pasivo puntual, identificado por su "clave" —
   // helper compartido por el vínculo automático de Compras y por los "Ajustes al saldo" manuales.
   async function ajustarSaldoPasivoPorClave(clave, delta){
-    const { data, error } = await sb.from('pasivos').select('id,nombre,saldo_actual').eq('clave', clave).single();
-    if(error || !data) return { error: error || new Error('Pasivo no encontrado') };
-    const nuevoSaldo = (data.saldo_actual || 0) + delta;
-    const { error: updErr } = await sb.from('pasivos').update({ saldo_actual: nuevoSaldo }).eq('id', data.id);
-    if(updErr) return { error: updErr };
-    const pLocal = (state.pasivos||[]).find(p=>p.clave===clave);
-    if(pLocal) pLocal.saldo_actual = nuevoSaldo;
-    return { nombre: data.nombre, nuevoSaldo };
+    // Lectura + escritura "con candado": solo escribe si el saldo sigue siendo el que leyó. Si otra carga
+    // (otra factura, la app en el celular, otra pestaña) lo cambió en el medio, vuelve a leer y reintenta,
+    // para que dos cargas seguidas nunca se pisen entre sí.
+    for(let intento=0; intento<8; intento++){
+      const { data, error } = await sb.from('pasivos').select('id,nombre,saldo_actual').eq('clave', clave).single();
+      if(error || !data) return { error: error || new Error('Pasivo no encontrado') };
+      const nuevoSaldo = Math.round(((data.saldo_actual || 0) + delta) * 100) / 100;
+      let q = sb.from('pasivos').update({ saldo_actual: nuevoSaldo }).eq('id', data.id);
+      q = (data.saldo_actual == null) ? q.is('saldo_actual', null) : q.eq('saldo_actual', data.saldo_actual);
+      const { data: upd, error: updErr } = await q.select('id');
+      if(updErr) return { error: updErr };
+      if(upd && upd.length){
+        const pLocal = (state.pasivos||[]).find(p=>p.clave===clave);
+        if(pLocal) pLocal.saldo_actual = nuevoSaldo;
+        return { nombre: data.nombre, nuevoSaldo };
+      }
+      await new Promise(r=>setTimeout(r, 40 + Math.random()*120));
+    }
+    return { error: new Error('El saldo cambió varias veces mientras se guardaba; reintentá') };
+  }
+  // Cola: las altas/bajas de facturas se procesan de a una, en orden, aunque se aprieten rápido.
+  let _colaFacturas = Promise.resolve();
+  function enColaFacturas(fn){
+    const r = _colaFacturas.then(fn, fn);
+    _colaFacturas = r.catch(()=>{});
+    return r;
   }
 
   // Ajusta el saldo_actual del pasivo vinculado a Compras cuando se agrega o borra una factura.
@@ -2903,11 +2921,24 @@
   async function ajustarComprasPorFactura(anio, mes, tipo, delta){
     const { data: rows, error: selErr } = await sb.from('compras').select('*').eq('anio', anio).eq('mes', mes);
     if(selErr){ showToast('Error sincronizando compras: '+selErr.message, true); return; }
-    const existing = rows && rows[0];
+    let existing = rows && rows[0];
     if(existing){
-      const nuevoValor = (existing[tipo] || 0) + delta;
-      const { error } = await sb.from('compras').update({ [tipo]: nuevoValor }).eq('id', existing.id);
-      if(error){ showToast('Error actualizando compras: '+error.message, true); return; }
+      let nuevoValor = null, okUpd = false;
+      for(let intento=0; intento<8 && !okUpd; intento++){
+        if(intento>0){
+          await new Promise(r=>setTimeout(r, 40 + Math.random()*120));
+          const { data: again, error: e2 } = await sb.from('compras').select('*').eq('id', existing.id).single();
+          if(e2 || !again){ showToast('Error sincronizando compras', true); return; }
+          existing = again;
+        }
+        nuevoValor = Math.round(((existing[tipo] || 0) + delta) * 100) / 100;
+        let q = sb.from('compras').update({ [tipo]: nuevoValor }).eq('id', existing.id);
+        q = (existing[tipo] == null) ? q.is(tipo, null) : q.eq(tipo, existing[tipo]);
+        const { data: upd, error } = await q.select('id');
+        if(error){ showToast('Error actualizando compras: '+error.message, true); return; }
+        okUpd = !!(upd && upd.length);
+      }
+      if(!okUpd){ showToast('No se pudo actualizar compras (cambió varias veces); reintentá', true); return; }
       existing[tipo] = nuevoValor;
       if(anio === state.activeYear){
         const idx = (state.comprasRows||[]).findIndex(r=>r.id===existing.id);
@@ -3060,22 +3091,29 @@
         <td><button class="btn danger small" data-del-factura-id="${f.id}">×</button></td>
       </tr>`).join('') : `<tr><td colspan="5" class="empty-row">Sin facturas cargadas para ${state.activeYear}</td></tr>`;
   }
-  async function addCompraFactura(){
+  function addCompraFactura(){
+    // Se "saca foto" del formulario al apretar el botón, para que cada clic cargue lo que se veía en ese momento.
+    const g = id=>document.getElementById(id).value;
+    const form = { fecha:g('cf-fecha'), monto:g('cf-monto'), tipo:g('cf-tipo'), numero:g('cf-numero') };
+    if(form.fecha && form.monto!=='' && !isNaN(parseFloat(form.monto))){ ['cf-numero','cf-monto'].forEach(id=>document.getElementById(id).value=''); }
+    return enColaFacturas(()=>addCompraFacturaImpl(form));
+  }
+  async function addCompraFacturaImpl(form){
     if(state.comprasFacturasDisponible === false){ showToast('Falta crear la tabla "compras_facturas" en Supabase antes de poder usar esto (ver instrucciones que te pasé por chat).', true); return; }
     if(state.activeYear === 'TODOS'){ showToast('Elegí un año arriba primero', true); return; }
-    const fechaVal = document.getElementById('cf-fecha').value;
+    const fechaVal = form.fecha;
     if(!fechaVal){ showToast('Elegí la fecha de la factura', true); return; }
-    const montoVal = document.getElementById('cf-monto').value;
+    const montoVal = form.monto;
     if(montoVal === '' || isNaN(parseFloat(montoVal))){ showToast('Cargá el monto', true); return; }
     const anio = parseInt(fechaVal.slice(0,4), 10);
     const mesIdx = parseInt(fechaVal.slice(5,7), 10) - 1;
     const mes = MESES[mesIdx];
     if(!mes){ showToast('Fecha inválida', true); return; }
-    const tipo = document.getElementById('cf-tipo').value;
+    const tipo = form.tipo;
     const payload = {
       anio, mes, tipo,
       fecha: fechaVal,
-      numero_factura: document.getElementById('cf-numero').value.trim() || null,
+      numero_factura: (form.numero||'').trim() || null,
       monto: parseFloat(montoVal),
     };
     const { data, error } = await sb.from('compras_facturas').insert(payload).select().single();
@@ -3091,8 +3129,11 @@
       showToast(anio === state.activeYear ? 'Factura agregada' : `Factura agregada en ${mes} ${anio} — cambiá al año ${anio} arriba para verla`);
     }
   }
-  async function deleteCompraFactura(id){
+  function deleteCompraFactura(id){
     if(!confirm('¿Borrar esta factura?')) return;
+    return enColaFacturas(()=>deleteCompraFacturaImpl(id));
+  }
+  async function deleteCompraFacturaImpl(id){
     const f = (state.comprasFacturas||[]).find(x=>String(x.id)===String(id));
     if(!f) return;
     const { error } = await sb.from('compras_facturas').delete().eq('id', id);
