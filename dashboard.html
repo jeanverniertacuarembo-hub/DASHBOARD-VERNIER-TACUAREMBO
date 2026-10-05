@@ -1171,6 +1171,7 @@
           <button class="btn" id="pa-btnGenerar">Generar presupuesto</button>
           <button class="btn danger" id="pa-btnReset" title="Borra todo el presupuesto del año a presupuestar, para volver a generarlo desde cero">Resetear presupuesto</button>
           <button class="btn" id="pa-btnFijar" style="display:none;">🔒 Fijar presupuesto</button>
+          <button class="btn" id="pa-btnExcel" title="Descarga el presupuesto ítem por ítem (cada mes) en un Excel">⬇ Descargar Excel</button>
         </div>
         <div id="pa-estado"></div>
         <p class="hint" style="margin:10px 0 0;font-size:11.5px;color:var(--ink-soft);line-height:1.45;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
@@ -1681,6 +1682,7 @@
     document.getElementById('pa-btnGenerar').addEventListener('click', paGenerarDesdeReferencia);
     document.getElementById('pa-btnReset').addEventListener('click', paResetPresupuesto);
     document.getElementById('pa-btnFijar').addEventListener('click', ()=>paToggleFijado(true));
+    document.getElementById('pa-btnExcel').addEventListener('click', paDescargarExcel);
 
     document.getElementById('ini-histIndFiltros').addEventListener('click', (ev)=>{
       const btn = ev.target.closest('button[data-hist-ind]');
@@ -6758,6 +6760,7 @@
     const realFiltrado = (realRows||[]).filter(r=>!presupuestoExcluida(r.categoria) && presupuestoTipoDe(r.categoria)!=='interes' && presupuestoTipoDe(r.categoria)!=='compra');
 
     const categorias = paCategorias(proyRows);
+    state.paExport = { anioObj, categorias, proyRows, cfg };
     document.getElementById('pa-tableHead').innerHTML = PRESUPUESTO_HEAD_NORMAL;
     if(!categorias.length){
       document.getElementById('pa-tableBody').innerHTML = `<tr><td colspan="14" class="empty-row">Todavía no hay presupuesto generado para ${anioObj}. Elegí un año de referencia arriba y tocá "Generar presupuesto".</td></tr>`;
@@ -6804,6 +6807,37 @@
       const dp = pres ? d/pres : 0;
       return `<tr><td style="text-align:left;">${escapeHtml(cat)}</td><td class="mono">$ ${fmt(pres)}</td><td class="mono">$ ${fmt(real)}</td><td class="mono" style="color:${d>0?'var(--bad)':'var(--good)'};">${d>0?'+':''}$ ${fmt(d)}</td><td class="mono" style="color:${d>0?'var(--bad)':'var(--good)'};">${fmtPct(dp)}</td></tr>`;
     }).join('') : `<tr><td colspan="5" class="empty-row">Sin datos todavía</td></tr>`;
+  }
+
+  // Descarga el presupuesto ítem por ítem (una fila por categoría, una columna por mes) en un Excel, con totales como fórmulas.
+  function paDescargarExcel(){
+    const ex = state.paExport;
+    if(!ex || !ex.categorias.length){ showToast('Todavía no hay presupuesto generado para descargar', true); return; }
+    if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar la librería de Excel. Revisá tu conexión y reintentá.', true); return; }
+    const col = n => XLSX.utils.encode_col(n);
+    const head = ['Ítem', ...MESES_CORTO, 'Total año'];
+    const aoa = [head];
+    const n = ex.categorias.length;
+    ex.categorias.forEach((cat, idx)=>{
+      const r = idx + 2; // fila de Excel (1 = encabezado)
+      let tot = 0;
+      const vals = MESES.map(mes=>{ const row = ex.proyRows.find(x=>x.categoria===cat && x.mes===mes); const v = row?.monto || 0; tot += v; return v; });
+      aoa.push([cat, ...vals, { t:'n', f:`SUM(B${r}:M${r})`, v: tot }]);
+    });
+    const totalRowIdx = n + 2;
+    const totales = MESES.map((mes,i)=> ex.categorias.reduce((sum,cat)=>{ const row = ex.proyRows.find(x=>x.categoria===cat && x.mes===mes); return sum + (row?.monto||0); }, 0));
+    aoa.push(['Total', ...totales.map((v,i)=>({ t:'n', f:`SUM(${col(i+1)}2:${col(i+1)}${n+1})`, v })), { t:'n', f:`SUM(N2:N${n+1})`, v: totales.reduce((a,b)=>a+b,0) }]);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 34 }, ...MESES.map(()=>({ wch: 11 })), { wch: 14 }];
+    ws['!freeze'] = { xSplit: 1, ySplit: 1 };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, ('Presupuesto '+ex.anioObj).slice(0,31));
+    const base = ex.cfg && ex.cfg.anioRef ? ` (base ${ex.cfg.anioRef}${ex.cfg.ajustePct?` + ${ex.cfg.ajustePct}%`:''})` : '';
+    const nota = XLSX.utils.aoa_to_sheet([['Presupuesto '+ex.anioObj+base], ['Cada fila es un ítem de Gastos; las columnas son los meses. Los totales son fórmulas: si cambiás un monto en la hoja, se actualizan solos.'], ['Descargado el '+new Date().toLocaleDateString('es-UY')]]);
+    nota['!cols'] = [{ wch: 110 }];
+    XLSX.utils.book_append_sheet(wb, nota, 'Notas');
+    XLSX.writeFile(wb, `presupuesto_${ex.anioObj}_por_item.xlsx`);
+    showToast('Excel descargado: presupuesto '+ex.anioObj+' ítem por ítem.');
   }
 
   async function paResetPresupuesto(){
