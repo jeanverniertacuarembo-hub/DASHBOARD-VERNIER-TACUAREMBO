@@ -1394,6 +1394,12 @@
               <thead><tr><th style="text-align:left;">Mes</th><th title="Temporada del vale">Temp.</th><th>Vale</th><th>Entrega</th><th>Saldo</th></tr></thead>
               <tbody id="pas-valesBody"></tbody>
             </table></div>
+            <h4 style="margin:18px 0 6px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;">Resumen por temporada</h4>
+            <p class="hint" style="margin:0 0 8px;">Suma los meses marcados como P-V u O-I de todos los años. La Primavera–Verano junta de septiembre a febrero (cruza dos años).</p>
+            <div class="table-scroll"><table>
+              <thead><tr><th style="text-align:left;">Temporada</th><th style="text-align:left;">Meses</th><th>Vales</th><th>Entregas</th><th>Saldo</th></tr></thead>
+              <tbody id="pas-valesTemporadas"></tbody>
+            </table></div>
           </div>
         </div>
         </div>
@@ -4833,8 +4839,57 @@
   function valesPendienteAcumulado(hastaAnio){
     return (state.valesTodos||[]).filter(r=>Number(r.anio) <= Number(hastaAnio)).reduce((s,r)=>s + ((r.vale||0)-(r.entrega||0)), 0);
   }
+  // Agrupa los meses con vales por temporada (todos los años). P-V cruza dos años: ene–jun cuenta para la que arrancó el año anterior.
+  function valesTemporadas(){
+    const MC = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+    const grupos = {};
+    (state.valesTodos||[]).forEach(r=>{
+      const v = r.vale||0, e = r.entrega||0;
+      if(!v && !e && !r.temporada) return;
+      const m = MESES.indexOf(String(r.mes||'').toUpperCase()) + 1;
+      const a = Number(r.anio);
+      if(!m || !a) return;
+      let key, label, orden;
+      if(r.temporada==='PV'){
+        const ini = m>=7 ? a : a-1;
+        key = 'PV'+ini; label = 'Primavera–Verano '+String(ini).slice(-2)+'/'+String(ini+1).slice(-2); orden = ini+0.7;
+      } else if(r.temporada==='OI'){
+        key = 'OI'+a; label = 'Otoño–Invierno '+a; orden = a+0.2;
+      } else { key = 'SIN'; label = 'Sin temporada'; orden = 9999; }
+      const g = grupos[key] || (grupos[key] = {key, label, orden, vale:0, entrega:0, meses:[]});
+      g.vale += v; g.entrega += e; g.meses.push({a,m});
+    });
+    return Object.values(grupos).sort((x,y)=>x.orden-y.orden).map(g=>{
+      g.meses.sort((x,y)=>(x.a*12+x.m)-(y.a*12+y.m));
+      const f = x=>MC[x.m-1]+' '+String(x.a).slice(-2);
+      const ini = g.meses[0], fin = g.meses[g.meses.length-1];
+      g.periodo = g.meses.length===1 ? f(ini) : f(ini)+' – '+f(fin);
+      return g;
+    });
+  }
+  // Clave de la temporada en curso (hoy): mar–ago = Otoño–Invierno del año; sep–feb = Primavera–Verano que arrancó en sep.
+  function valesTemporadaActualKey(){
+    const d = new Date(), m = d.getMonth()+1, a = d.getFullYear();
+    if(m>=3 && m<=8) return 'OI'+a;
+    return 'PV'+(m>=9 ? a : a-1);
+  }
+  function renderValesTemporadas(){
+    const el = document.getElementById('pas-valesTemporadas'); if(!el) return;
+    const gs = valesTemporadas();
+    const actual = valesTemporadaActualKey();
+    let tv=0, te=0;
+    const filas = gs.map(g=>{
+      tv += g.vale; te += g.entrega;
+      const esAct = g.key===actual;
+      return `<tr${esAct?' style="background:var(--acc-soft,#EAFAF7);"':''}><td style="text-align:left;">${g.label}${esAct?' <span class="hint">(actual)</span>':''}</td><td style="text-align:left;">${g.periodo}</td><td class="mono">$ ${fmt(g.vale)}</td><td class="mono">$ ${fmt(g.entrega)}</td><td class="mono">$ ${fmt(g.vale-g.entrega)}</td></tr>`;
+    }).join('');
+    el.innerHTML = gs.length
+      ? filas + `<tr style="font-weight:600;"><td style="text-align:left;">Total</td><td></td><td class="mono">$ ${fmt(tv)}</td><td class="mono">$ ${fmt(te)}</td><td class="mono">$ ${fmt(tv-te)}</td></tr>`
+      : `<tr><td colspan="5" class="empty-row">Marcá la temporada de cada mes para ver el resumen</td></tr>`;
+  }
   function renderValesTodos(){
     document.getElementById('pas-valesYearLabel').textContent = 'todos los años';
+    renderValesTemporadas();
     const porAnio = {};
     (state.vales||[]).forEach(r=>{
       if(!porAnio[r.anio]) porAnio[r.anio] = {vale:0, entrega:0};
@@ -4855,13 +4910,12 @@
   function renderVales(){
     if(state.activeYear === 'TODOS'){ renderValesTodos(); return; }
     document.getElementById('pas-valesYearLabel').textContent = state.activeYear;
+    renderValesTemporadas();
     let valeTot=0, entregaTot=0;
-    const tp = {PV:0, OI:0};
     const body = MESES.map((mes,i)=>{
       const r = valeRowFor(mes);
       const v = r?.vale || 0, e = r?.entrega || 0;
       valeTot += v; entregaTot += e;
-      if(r?.temporada==='PV' || r?.temporada==='OI') tp[r.temporada] += (v-e);
       return `<tr data-mes="${mes}">
         <td style="text-align:left;">${MESES_CORTO[i]}</td>
         <td><select class="vale-temp" data-temp="${r?.temporada||''}" title="Temporada del vale"><option value="">—</option><option value="PV"${r?.temporada==='PV'?' selected':''}>P-V</option><option value="OI"${r?.temporada==='OI'?' selected':''}>O-I</option></select></td>
@@ -4877,8 +4931,8 @@
       <div class="kpi"><div class="label">Entregas ${state.activeYear}</div><div class="value">$ ${fmt(entregaTot)}</div></div>
       <div class="kpi"><div class="label">Saldo ${state.activeYear}</div><div class="value">$ ${fmt(valeTot-entregaTot)}</div></div>
       <div class="kpi accent"><div class="label">Pendiente total de vales</div><div class="value">$ ${fmt(pendienteAcumulado)}</div></div>
-      <div class="kpi"><div class="label">Saldo Primavera–Verano ${state.activeYear}</div><div class="value">$ ${fmt(tp.PV)}</div></div>
-      <div class="kpi"><div class="label">Saldo Otoño–Invierno ${state.activeYear}</div><div class="value">$ ${fmt(tp.OI)}</div></div>`;
+      ${(()=>{ const g = valesTemporadas().find(x=>x.key===valesTemporadaActualKey());
+        return g ? `<div class="kpi"><div class="label">Saldo ${g.label} (actual)</div><div class="value">$ ${fmt(g.vale-g.entrega)}</div></div>` : ''; })()}`;
   }
   async function onValeCellChange(input){
     const mes = input.closest('tr').dataset.mes;
