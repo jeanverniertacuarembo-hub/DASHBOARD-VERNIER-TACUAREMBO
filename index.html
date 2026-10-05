@@ -319,6 +319,9 @@
   tbody td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;font-family:'IBM Plex Mono',monospace;}
   tbody tr:hover{background:var(--paper-2);}
   tbody tr.total-row td{font-weight:700;border-top:2px solid var(--ink);border-bottom:none;}
+  select.vale-temp{border:1px solid var(--line);background:var(--paper2,#f7f7f5);border-radius:6px;font-size:12px;padding:2px 2px;color:var(--ink);width:56px;}
+  select.vale-temp[data-temp="PV"]{background:#EAFAF7;border-color:#8FE0D6;color:#0F4A44;}
+  select.vale-temp[data-temp="OI"]{background:#F1ECE4;border-color:#C9B99B;color:#5A4524;}
   input.cell{width:100%;border:none;background:transparent;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);padding:2px;border-radius:4px;}
   input.cell:focus{background:var(--accent-soft);outline:none;}
   .cell-wrap{display:flex;align-items:center;gap:2px;}
@@ -1388,7 +1391,7 @@
             <p class="hint" style="margin:0 0 10px;">Vales entregados y devoluciones, por mes de <span id="pas-valesYearLabel"></span> — usa el mismo año que elegís arriba.</p>
             <div class="kpis" id="pas-valesKpis" style="margin-bottom:12px;"></div>
             <div class="table-scroll"><table>
-              <thead><tr><th style="text-align:left;">Mes</th><th>Vale</th><th>Entrega</th><th>Saldo</th></tr></thead>
+              <thead><tr><th style="text-align:left;">Mes</th><th title="Temporada del vale">Temp.</th><th>Vale</th><th>Entrega</th><th>Saldo</th></tr></thead>
               <tbody id="pas-valesBody"></tbody>
             </table></div>
           </div>
@@ -1897,7 +1900,7 @@
       const btn = ev.target.closest('button[data-del-extra-id]'); if(btn) deletePasivoCampoExtra(btn.dataset.delExtraId);
     });
     document.getElementById('pas-valesBody').addEventListener('change', (ev)=>{
-      const input = ev.target.closest('input.cell'); if(input) onValeCellChange(input);
+      const input = ev.target.closest('input.cell, select.vale-temp'); if(input) onValeCellChange(input);
     });
     document.getElementById('pas-valesBody').addEventListener('click', (ev)=>{
       const btn = ev.target.closest('button[data-del-mes]'); if(btn) deleteValeRow(btn.dataset.delMes);
@@ -4840,8 +4843,8 @@
     });
     const anios = Object.keys(porAnio).map(Number).sort((a,b)=>a-b);
     document.getElementById('pas-valesBody').innerHTML = anios.length
-      ? anios.map(a=>`<tr><td style="text-align:left;">${a}</td><td class="mono">$ ${fmt(porAnio[a].vale)}</td><td class="mono">$ ${fmt(porAnio[a].entrega)}</td><td class="mono">$ ${fmt(porAnio[a].vale-porAnio[a].entrega)}</td></tr>`).join('')
-      : `<tr><td colspan="4" class="empty-row">Sin datos todavía</td></tr>`;
+      ? anios.map(a=>`<tr><td style="text-align:left;">${a}</td><td></td><td class="mono">$ ${fmt(porAnio[a].vale)}</td><td class="mono">$ ${fmt(porAnio[a].entrega)}</td><td class="mono">$ ${fmt(porAnio[a].vale-porAnio[a].entrega)}</td></tr>`).join('')
+      : `<tr><td colspan="5" class="empty-row">Sin datos todavía</td></tr>`;
     const valeTot = anios.reduce((s,a)=>s+porAnio[a].vale,0);
     const entregaTot = anios.reduce((s,a)=>s+porAnio[a].entrega,0);
     document.getElementById('pas-valesKpis').innerHTML = `
@@ -4853,12 +4856,15 @@
     if(state.activeYear === 'TODOS'){ renderValesTodos(); return; }
     document.getElementById('pas-valesYearLabel').textContent = state.activeYear;
     let valeTot=0, entregaTot=0;
+    const tp = {PV:0, OI:0};
     const body = MESES.map((mes,i)=>{
       const r = valeRowFor(mes);
       const v = r?.vale || 0, e = r?.entrega || 0;
       valeTot += v; entregaTot += e;
+      if(r?.temporada==='PV' || r?.temporada==='OI') tp[r.temporada] += (v-e);
       return `<tr data-mes="${mes}">
         <td style="text-align:left;">${MESES_CORTO[i]}</td>
+        <td><select class="vale-temp" data-temp="${r?.temporada||''}" title="Temporada del vale"><option value="">—</option><option value="PV"${r?.temporada==='PV'?' selected':''}>P-V</option><option value="OI"${r?.temporada==='OI'?' selected':''}>O-I</option></select></td>
         <td><input class="cell" type="number" step="0.01" value="${v||''}" data-field="vale"></td>
         <td><input class="cell" type="number" step="0.01" value="${e||''}" data-field="entrega"></td>
         <td class="mono">$ ${fmt(v-e)} ${r?`<button class="btn danger small" style="margin-left:6px;" data-del-mes="${mes}">×</button>`:''}</td>
@@ -4870,12 +4876,15 @@
       <div class="kpi"><div class="label">Vales ${state.activeYear}</div><div class="value">$ ${fmt(valeTot)}</div></div>
       <div class="kpi"><div class="label">Entregas ${state.activeYear}</div><div class="value">$ ${fmt(entregaTot)}</div></div>
       <div class="kpi"><div class="label">Saldo ${state.activeYear}</div><div class="value">$ ${fmt(valeTot-entregaTot)}</div></div>
-      <div class="kpi accent"><div class="label">Pendiente total de vales</div><div class="value">$ ${fmt(pendienteAcumulado)}</div></div>`;
+      <div class="kpi accent"><div class="label">Pendiente total de vales</div><div class="value">$ ${fmt(pendienteAcumulado)}</div></div>
+      <div class="kpi"><div class="label">Saldo Primavera–Verano ${state.activeYear}</div><div class="value">$ ${fmt(tp.PV)}</div></div>
+      <div class="kpi"><div class="label">Saldo Otoño–Invierno ${state.activeYear}</div><div class="value">$ ${fmt(tp.OI)}</div></div>`;
   }
   async function onValeCellChange(input){
     const mes = input.closest('tr').dataset.mes;
-    const field = input.dataset.field;
-    const value = input.value === '' ? null : parseFloat(input.value);
+    const esTemp = input.tagName === 'SELECT';
+    const field = esTemp ? 'temporada' : input.dataset.field;
+    const value = esTemp ? (input.value || null) : (input.value === '' ? null : parseFloat(input.value));
     const existing = valeRowFor(mes);
     input.disabled = true;
     try{
@@ -4892,7 +4901,11 @@
         (state.valesTodos||(state.valesTodos=[])).push(data);
       }
       renderVales();
-    }catch(e){ showToast('Error guardando: '+e.message, true); input.disabled = false; }
+    }catch(e){
+      const falta = esTemp && /temporada/i.test(e.message||'');
+      showToast(falta ? 'Falta crear la columna "temporada" en Supabase (ver instrucción de Claude).' : 'Error guardando: '+e.message, true);
+      input.disabled = false; renderVales();
+    }
   }
   async function deleteValeRow(mes){
     const existing = valeRowFor(mes);
