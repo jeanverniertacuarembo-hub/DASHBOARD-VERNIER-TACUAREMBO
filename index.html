@@ -1171,7 +1171,8 @@
           <button class="btn" id="pa-btnGenerar">Generar presupuesto</button>
           <button class="btn danger" id="pa-btnReset" title="Borra todo el presupuesto del año a presupuestar, para volver a generarlo desde cero">Resetear presupuesto</button>
           <button class="btn" id="pa-btnFijar" style="display:none;">🔒 Fijar presupuesto</button>
-          <button class="btn" id="pa-btnExcel" title="Descarga el presupuesto ítem por ítem (cada mes) en un Excel">⬇ Descargar Excel</button>
+          <button class="btn" id="pa-btnExcel" title="Descarga el presupuesto ítem por ítem (cada mes) en un Excel">⬇ Presupuesto por ítem (Excel)</button>
+          <button class="btn" id="pa-btnExcelComp" title="Descarga el presupuestado vs. real de cada ítem, con el avance, en un Excel">⬇ Presupuestado vs. Real (Excel)</button>
         </div>
         <div id="pa-estado"></div>
         <p class="hint" style="margin:10px 0 0;font-size:11.5px;color:var(--ink-soft);line-height:1.45;">Genera un ítem por cada categoría de Gastos Fijos del año de referencia, con el monto de cada mes multiplicado por (1 + % de ajuste). Después podés editar cualquier celda a mano. Si ya existe un presupuesto para el año a presupuestar, esto lo reemplaza.</p>
@@ -1192,6 +1193,7 @@
       <div class="collapsible" id="pa-collapseComparativo">
         <div class="collapsible-head" onclick="this.parentElement.classList.toggle('open')"><h3>Presupuestado vs. Real — <span id="pa-anioObjLabel2"></span></h3><span class="chev">▾</span></div>
         <div class="collapsible-body">
+          <div style="margin:0 0 10px;"><button class="btn small" id="pa-btnExcelComp2" type="button">⬇ Descargar este cuadro (Excel)</button></div>
           <p class="hint" style="margin:0 0 10px;font-size:11.5px;color:var(--ink-soft);">Compara cada ítem contra lo presupuestado de los mismos meses que ya tienen gastos reales cargados. Se actualiza solo a medida que cargás Gastos.</p>
           <div class="table-scroll"><table>
             <thead><tr><th style="text-align:left;">Ítem</th><th>Presupuestado a la fecha</th><th>Real a la fecha</th><th>Desvío $</th><th>Desvío %</th></tr></thead>
@@ -1683,6 +1685,8 @@
     document.getElementById('pa-btnReset').addEventListener('click', paResetPresupuesto);
     document.getElementById('pa-btnFijar').addEventListener('click', ()=>paToggleFijado(true));
     document.getElementById('pa-btnExcel').addEventListener('click', paDescargarExcel);
+    document.getElementById('pa-btnExcelComp').addEventListener('click', paDescargarExcelComparativo);
+    document.getElementById('pa-btnExcelComp2').addEventListener('click', paDescargarExcelComparativo);
 
     document.getElementById('ini-histIndFiltros').addEventListener('click', (ev)=>{
       const btn = ev.target.closest('button[data-hist-ind]');
@@ -6800,6 +6804,7 @@
       <div class="kpi ${desvio>0?'':'accent'}"><div class="label">Desvío ${hastaLbl}${infoBadge('Real − presupuestado de los mismos meses. En rojo (+) gastaste más de lo presupuestado; en verde (−) gastaste menos.')}</div><div class="value" style="color:${desvio>0?'var(--bad)':'var(--good)'};">${desvio>0?'+':''}$ ${fmt(desvio)}</div><div class="kpi-sub">${desvio>0?'+':''}${fmtPct(desvioPct)}</div></div>`;
 
     const todasCats = Array.from(new Set([...categorias, ...paCategorias(realFiltrado)])).sort();
+    Object.assign(state.paExport, { todasCats, mesesHasta, hastaLbl, realFiltrado });
     document.getElementById('pa-comparativoBody').innerHTML = todasCats.length ? todasCats.map(cat=>{
       const pres = mesesHasta.reduce((s,mes)=>{ const r=proyRows.find(x=>x.categoria===cat&&x.mes===mes); return s+(r?.monto||0); },0);
       const real = realFiltrado.filter(r=>r.categoria===cat).reduce((s,r)=>s+(r.monto||0),0);
@@ -6838,6 +6843,68 @@
     XLSX.utils.book_append_sheet(wb, nota, 'Notas');
     XLSX.writeFile(wb, `presupuesto_${ex.anioObj}_por_item.xlsx`);
     showToast('Excel descargado: presupuesto '+ex.anioObj+' ítem por ítem.');
+  }
+
+  // Descarga el cuadro "Presupuestado vs. Real" por ítem (con avance sobre el año) y el detalle mensual del real.
+  function paDescargarExcelComparativo(){
+    const ex = state.paExport;
+    if(!ex || !ex.todasCats || !ex.todasCats.length){ showToast('Todavía no hay datos para descargar', true); return; }
+    if(typeof XLSX === 'undefined'){ showToast('No se pudo cargar la librería de Excel. Revisá tu conexión y reintentá.', true); return; }
+    const { anioObj, proyRows, realFiltrado, todasCats, mesesHasta } = ex;
+    const nMeses = mesesHasta.length;
+    const hasta = nMeses ? MESES_CORTO[nMeses-1] : '—';
+    const head = ['Ítem', `Presupuestado ene–${hasta.toLowerCase()}`, `Real ene–${hasta.toLowerCase()}`, 'Desvío $ (Real − Presup.)', 'Desvío %', 'Presupuesto año completo', 'Avance del real sobre el año', 'Saldo del presupuesto anual'];
+    const aoa = [head];
+    let sp=0, sr=0, sa=0;
+    todasCats.forEach((cat, idx)=>{
+      const r = idx + 2;
+      const pres = mesesHasta.reduce((sum,mes)=>{ const x=proyRows.find(y=>y.categoria===cat&&y.mes===mes); return sum+(x?.monto||0); },0);
+      const real = realFiltrado.filter(x=>x.categoria===cat).reduce((sum,x)=>sum+(x.monto||0),0);
+      const anual = MESES.reduce((sum,mes)=>{ const x=proyRows.find(y=>y.categoria===cat&&y.mes===mes); return sum+(x?.monto||0); },0);
+      sp+=pres; sr+=real; sa+=anual;
+      aoa.push([cat, pres, real,
+        { t:'n', f:`C${r}-B${r}`, v: real-pres },
+        { t:'n', f:`IF(B${r}=0,0,D${r}/B${r})`, v: pres? (real-pres)/pres : 0 },
+        anual,
+        { t:'n', f:`IF(F${r}=0,0,C${r}/F${r})`, v: anual? real/anual : 0 },
+        { t:'n', f:`F${r}-C${r}`, v: anual-real }]);
+    });
+    const n = todasCats.length, t = n + 2;
+    aoa.push(['Total',
+      { t:'n', f:`SUM(B2:B${n+1})`, v: sp }, { t:'n', f:`SUM(C2:C${n+1})`, v: sr },
+      { t:'n', f:`C${t}-B${t}`, v: sr-sp }, { t:'n', f:`IF(B${t}=0,0,D${t}/B${t})`, v: sp? (sr-sp)/sp : 0 },
+      { t:'n', f:`SUM(F2:F${n+1})`, v: sa }, { t:'n', f:`IF(F${t}=0,0,C${t}/F${t})`, v: sa? sr/sa : 0 },
+      { t:'n', f:`F${t}-C${t}`, v: sa-sr }]);
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{ wch: 34 }, { wch: 18 }, { wch: 16 }, { wch: 22 }, { wch: 11 }, { wch: 22 }, { wch: 22 }, { wch: 22 }];
+    for(let r=2; r<=t; r++){
+      ['B','C','D','F','H'].forEach(c=>{ const cell = ws[c+r]; if(cell) cell.z = '#,##0;-#,##0'; });
+      ['E','G'].forEach(c=>{ const cell = ws[c+r]; if(cell) cell.z = '0.0%'; });
+    }
+    // Detalle mensual del real por ítem (para ver en qué mes se movió cada gasto)
+    const head2 = ['Ítem', ...MESES_CORTO, 'Total real'];
+    const aoa2 = [head2];
+    todasCats.forEach((cat, idx)=>{
+      const r = idx + 2;
+      let tot = 0;
+      const vals = MESES.map(mes=>{ const v = realFiltrado.filter(x=>x.categoria===cat && x.mes===mes).reduce((sum,x)=>sum+(x.monto||0),0); tot += v; return v; });
+      aoa2.push([cat, ...vals, { t:'n', f:`SUM(B${r}:M${r})`, v: tot }]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(aoa2);
+    ws2['!cols'] = [{ wch: 34 }, ...MESES.map(()=>({ wch: 11 })), { wch: 14 }];
+    const nota = XLSX.utils.aoa_to_sheet([
+      ['Presupuestado vs. Real — '+anioObj],
+      [`Se compara el real contra lo presupuestado de los mismos meses que ya tienen gastos cargados (enero a ${hasta.toLowerCase()}). Desvío positivo = gastaste más de lo presupuestado.`],
+      ['"Avance del real sobre el año" es lo que ya gastaste dividido el presupuesto del año completo de ese ítem.'],
+      ['Descargado el '+new Date().toLocaleDateString('es-UY')],
+    ]);
+    nota['!cols'] = [{ wch: 120 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Presupuestado vs Real');
+    XLSX.utils.book_append_sheet(wb, ws2, 'Real por mes');
+    XLSX.utils.book_append_sheet(wb, nota, 'Notas');
+    XLSX.writeFile(wb, `presupuestado_vs_real_${anioObj}.xlsx`);
+    showToast('Excel descargado: presupuestado vs. real '+anioObj+'.');
   }
 
   async function paResetPresupuesto(){
