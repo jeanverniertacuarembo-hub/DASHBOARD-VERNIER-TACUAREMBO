@@ -14,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:ital,wght@1,500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -153,6 +153,45 @@
   .as-in button{border:none;border-radius:8px;padding:0 12px;font-family:inherit;font-size:12.5px;cursor:pointer;}
   .as-in .as-send{background:var(--ink);color:#fff;} .as-in .as-toggle{background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent);}
   @media(max-width:560px){ .as-panel{right:8px;left:8px;width:auto;max-width:none;bottom:76px;height:calc(100vh - 100px);} .as-fab{right:12px;bottom:12px;} }
+
+  /* ---- Portada del asistente (MiDash) ---- */
+  .as-head > div:first-child{flex:1;min-width:0;}
+  .as-home{display:none;}
+  .as-inicio .as-home{display:block;flex:1;overflow-y:auto;background:#FBFBF8;padding:22px 20px 16px;}
+  .as-inicio #asMsgs,.as-inicio #asChips,.as-inicio #asForm{display:none;}
+  .as-home-in{max-width:620px;margin:0 auto;text-align:center;}
+  .as-pill{display:inline-block;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);border:1px solid var(--accent);border-radius:999px;padding:4px 11px;font-weight:600;}
+  .as-h{font-size:30px;line-height:1.15;margin:16px 0 8px;font-weight:600;letter-spacing:-.01em;}
+  .as-h em{font-family:'IBM Plex Serif',Georgia,serif;font-style:italic;font-weight:500;color:var(--accent-ink);}
+  .as-lead{font-size:14px;line-height:1.5;color:var(--ink-soft);margin:0 auto 16px;max-width:460px;}
+  .as-search{display:flex;gap:8px;align-items:flex-end;background:#fff;border:1px solid var(--line-strong);border-radius:var(--radius);padding:8px;text-align:left;}
+  .as-search textarea{flex:1;min-width:0;border:none;outline:none;resize:none;font-family:inherit;font-size:15px;line-height:1.4;max-height:140px;padding:6px 6px;background:transparent;}
+  .as-search button{background:var(--ink);color:var(--accent);border:none;border-radius:9px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .as-hint{font-size:11px;color:var(--ink-soft);margin:7px 0 0;}
+  .as-ayuda{font-size:12px;color:var(--ink-soft);margin:12px auto 0;max-width:460px;line-height:1.45;}
+  .as-pills{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px 0 18px;}
+  .as-pills button{background:#fff;border:1px solid var(--line-strong);color:var(--ink);border-radius:999px;padding:8px 14px;font-family:inherit;font-size:12.8px;cursor:pointer;}
+  .as-pills button:hover{background:var(--accent-soft);border-color:var(--accent);}
+  .as-pills button.todas{border-style:dashed;color:var(--accent-ink);background:transparent;}
+  .as-live{font-size:11.5px;color:var(--ink-soft);display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:12px;}
+  .as-live i{width:8px;height:8px;border-radius:50%;background:#2F9E5F;display:inline-block;flex:none;}
+  .as-live a{color:var(--accent-ink);cursor:pointer;text-decoration:underline;}
+  .as-panel.as-full{left:50%;right:auto;transform:translateX(-50%);width:min(880px,calc(100vw - 16px));max-width:none;top:8px;bottom:8px;height:auto;}
+  @media(max-width:680px){ .as-panel.as-full{bottom:72px;} }
+  @media(max-width:560px){ .as-inicio .as-home{padding:14px;} .as-h{font-size:25px;} .as-panel.as-full{left:8px;right:8px;transform:none;width:auto;top:8px;} }
+
+  /* ---- Carga guiada y voz (MiDash) ---- */
+  .as-qr{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;max-height:230px;overflow-y:auto;}
+  .as-qr button{background:var(--accent-soft);border:1px solid var(--accent);color:var(--accent-ink);border-radius:999px;padding:6px 12px;font-family:inherit;font-size:12.5px;cursor:pointer;text-align:left;}
+  .as-qr button:hover{background:var(--accent);}
+  .as-qr button.cancel{background:#fff;border-color:var(--line-strong);color:var(--ink-soft);}
+  .as-qr[data-hecho] button{opacity:.4;pointer-events:none;}
+  .as-qr[data-hecho] button.sel{opacity:1;background:var(--accent);font-weight:600;}
+  .as-llevo{font-size:11.5px;color:var(--ink-soft);margin:0 0 6px;padding-bottom:6px;border-bottom:1px dashed var(--line);}
+  .as-search button.as-mic,.as-in button.as-mic{background:#fff;color:var(--ink);border:1px solid var(--line-strong);border-radius:9px;padding:9px 11px;font-size:15px;line-height:1;cursor:pointer;}
+  .as-in button.as-mic{padding:0 11px;background:var(--accent-soft);border-color:var(--accent);}
+  .as-mic.rec{background:#C8432B !important;border-color:#C8432B !important;color:#fff !important;animation:asrec 1s infinite;}
+  @keyframes asrec{50%{opacity:.55;}}
   .as-iasw{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#D8D8D4;cursor:pointer;user-select:none;}
   .as-iasw input{accent-color:var(--accent);}
   .as-think{display:inline-flex;gap:4px;align-items:center;} .as-think i{width:6px;height:6px;border-radius:50%;background:var(--ink-soft);animation:asblink 1s infinite;} .as-think i:nth-child(2){animation-delay:.2s;} .as-think i:nth-child(3){animation-delay:.4s;}
@@ -1540,10 +1579,20 @@
   <!-- ---------- ASISTENTE (botón flotante) ---------- -->
   <button type="button" class="as-fab" id="asFab" title="Asistente: preguntas sobre el negocio" aria-label="Abrir el asistente"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.5-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 11h7M8.5 14h4.5"/></svg></button>
   <div class="as-panel" id="asPanel" role="dialog" aria-label="Asistente">
-    <div class="as-head"><div><b>Asistente</b><span id="asSub">Responde con los números de tu dashboard</span></div><label class="as-iasw" title="Activá la IA para preguntas libres y cargar gastos"><input type="checkbox" id="asIaChk"> IA</label><button type="button" class="as-eye" id="asEye" title="Mostrar u ocultar los montos en este chat">👁</button><button type="button" id="asReset" title="Borrar la conversación y empezar de nuevo">🗑</button><button type="button" id="asClose" title="Cerrar">✕</button></div>
+    <div class="as-head"><div><b id="asTitulo">Asistente</b><span id="asSub">Responde con los números de tu dashboard</span></div><label class="as-iasw" title="Activá la IA para preguntas libres y cargar gastos"><input type="checkbox" id="asIaChk"> IA</label><button type="button" id="asFull" title="Agrandar o achicar el panel">⤢</button><button type="button" id="asHomeBtn" title="Volver a la portada (no borra la conversación)">⌂</button><button type="button" class="as-eye" id="asEye" title="Mostrar u ocultar los montos en este chat">👁</button><button type="button" id="asReset" title="Borrar la conversación y empezar de nuevo">🗑</button><button type="button" id="asClose" title="Cerrar">✕</button></div>
+    <div class="as-home" id="asHome"><div class="as-home-in">
+      <span class="as-pill" id="asPill"></span>
+      <h2 class="as-h">Hola, soy <em id="asNombreEm"></em></h2>
+      <p class="as-lead">Tu asistente de Vernier Tacuarembó. Preguntame lo que quieras sobre los números del negocio.</p>
+      <div class="as-search"><textarea id="asHomeInput" rows="1" placeholder="Ej: ¿en qué mes gasté más?" aria-label="Tu pregunta"></textarea><button type="button" class="as-mic" id="asHomeMic" title="Hablarle a MiDash (dictado por voz)" aria-label="Dictar por voz">🎤</button><button type="button" id="asHomeSend">Preguntar</button></div>
+      <div class="as-hint">Enter para enviar · Shift + Enter para salto de línea</div>
+      <p class="as-ayuda" id="asHomeAyuda"></p>
+      <div class="as-pills" id="asPills"></div>
+      <div class="as-live" id="asLive"></div>
+    </div></div>
     <div class="as-msgs" id="asMsgs"></div>
     <div class="as-chips" id="asChips"></div>
-    <form class="as-in" id="asForm"><button type="button" class="as-toggle" id="asToggle" title="Ver las preguntas sugeridas">?</button><input type="text" id="asInput" placeholder="Escribí una pregunta (ej: cuánto vendí en marzo 2026)" autocomplete="off"><button type="submit" class="as-send">Enviar</button></form>
+    <form class="as-in" id="asForm"><button type="button" class="as-toggle" id="asToggle" title="Ver las preguntas sugeridas">?</button><input type="text" id="asInput" placeholder="Escribí una pregunta (ej: cuánto vendí en marzo 2026)" autocomplete="off"><button type="button" class="as-mic" id="asMic" title="Hablarle a MiDash (dictado por voz)" aria-label="Dictar por voz">🎤</button><button type="submit" class="as-send">Enviar</button></form>
   </div>
 
 </div>
@@ -2318,6 +2367,7 @@
       };
       state.iniData = data;
       state.iniCargadoEn = Date.now();
+      if(typeof asRefrescarInicio==='function') asRefrescarInicio();
       renderInicio(data);
       const histBanner = document.getElementById('ini-histBanner');
       if(histBanner) histBanner.innerHTML = '';
@@ -5727,6 +5777,7 @@
   // ---------- ASISTENTE (sin IA: responde con reglas y cálculos del propio dashboard) ----------
   // Lee todo el detalle de state.iniData (ventas, compras, gastos, cuentas, pasivos). Las preguntas que
   // muestran deudas u objetivos piden de nuevo la contraseña (mismo candado que Pasivos y Objetivos).
+  const AS_NOMBRE = 'MiDash';
   const AS_LOCK = new Set(['debo','primero','despuesCuotas','semaforo','smart']);
   const AS_CHIPS = [
     { g:'El negocio', items:[['estado','¿Cómo está el negocio hoy?'],['caja','¿Cuánta plata tengo en cada cuenta?'],['mesVsAnt','¿Cómo vine este mes vs. el año pasado?'],['anioVsAnt','¿Cómo va el año vs. el anterior?'],['mejores','¿Cuáles son mis mejores y peores meses?']] },
@@ -6188,6 +6239,48 @@
     const sub = document.getElementById('asSub'), chk = document.getElementById('asIaChk');
     if(chk) chk.checked = asIaOn;
     if(sub) sub.textContent = asIaOn ? 'Con IA: preguntá o pedime cargar ventas, compras o gastos' : 'Sin IA: responde con cálculos fijos';
+    asRefrescarInicio();
+  }
+  // ---- Portada ----
+  const AS_PASTILLAS = ['estado','mesVsAnt','equilibrio','caja'];
+  function asEnInicio(){ return document.getElementById('asPanel').classList.contains('as-inicio'); }
+  function asMostrarInicio(){
+    document.getElementById('asPanel').classList.add('as-inicio');
+    asRefrescarInicio();
+    setTimeout(()=>{ const i = document.getElementById('asHomeInput'); if(i) i.focus(); }, 50);
+  }
+  function asMostrarChat(){
+    document.getElementById('asPanel').classList.remove('as-inicio');
+    const box = document.getElementById('asMsgs'); if(box) box.scrollTop = box.scrollHeight;
+  }
+  function asRefrescarInicio(){
+    const pill = document.getElementById('asPill'); if(!pill) return;
+    pill.textContent = AS_NOMBRE.toUpperCase() + (asIaOn ? ' · ASISTENTE IA DEL DASHBOARD' : ' · ASISTENTE DEL DASHBOARD (SIN IA)');
+    document.getElementById('asHomeAyuda').textContent = asIaOn
+      ? 'Con la IA activada podés escribir lo que quieras o pedirme cargar ventas, compras o gastos (siempre te pido confirmar antes de guardar).'
+      : 'La IA está apagada: respondo con cálculos fijos. Elegí una de las preguntas de abajo o activá la IA con el interruptor de arriba.';
+    const live = document.getElementById('asLive');
+    const d = state.iniData;
+    if(!d){ live.innerHTML = '<i style="background:#D99A12"></i><span>Cargando datos…</span>'; return; }
+    let meses = 0, cuentas = 0, ult = '—', act = '';
+    try{
+      meses = new Set((d.ventas||[]).filter(r=>r.anio!=null && r.mes && ((r.efectivo||0)+(r.credito||0))>0).map(r=>r.anio+'|'+r.mes)).size;
+      cuentas = new Set([...(d.flujoCaja||[]),...(d.flujoSaldo||[])].map(r=>r.cuenta).filter(Boolean)).size;
+      const u = asUlt(d); if(u){ const m = String(u.mes||''); ult = m.charAt(0).toUpperCase()+m.slice(1).toLowerCase()+' '+u.anio; }
+      if(state.iniCargadoEn) act = new Date(state.iniCargadoEn).toLocaleString('es-UY',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    }catch(e){}
+    live.innerHTML = `<i></i><span><b>Índice en vivo:</b> ${meses} meses de ventas · ${cuentas} cuentas · último dato ${escapeHtml(ult)}${act?' · actualizado '+act:''}</span> <a data-asquever>qué ve la IA</a>`;
+  }
+  function asEnviarDesdeInicio(key){
+    const inp = document.getElementById('asHomeInput');
+    if(key){ asMostrarChat(); asPreguntar(key, AS_ETIQUETA[key]); return; }
+    const t = inp.value.trim(); if(!t) return;
+    inp.value = ''; inp.style.height = 'auto';
+    asMostrarChat(); asPreguntar(null, t);
+  }
+  function asAplicarFull(on){
+    document.getElementById('asPanel').classList.toggle('as-full', on);
+    try{ localStorage.setItem('vt_as_full', on?'1':'0'); }catch(e){}
   }
   async function asVerEnviado(){
     const data = await asAsegurarDatos();
@@ -6202,6 +6295,11 @@
       let data = await asAsegurarDatos();
       if(!data){ asAgregar('bot', '<p>No pude leer los datos del dashboard ahora. Probá de nuevo en un momento.</p>'); return; }
       let html;
+      if(!key){
+        if(asCarga && /\?/.test(textoUsuario||'') && !asEsCarga(textoUsuario||'')) asCargaCancelar(false);
+        if(asCarga){ await asCargaTexto(textoUsuario||''); return; }
+        if(asEsCarga(textoUsuario||'')){ await asCargaIniciar(textoUsuario||''); return; }
+      }
       if(!key && asIaOn){
         await asIAPreguntar(data, textoUsuario||'');
         return;
@@ -6222,15 +6320,247 @@
       document.getElementById('asChips').classList.add('hide');
     } finally { asOcupado = false; }
   }
+
+  // =====================================================================
+  // CARGA GUIADA: MiDash te va preguntando dónde y a qué corresponde, paso a paso, y recién al final
+  // muestra la tarjeta de confirmación de siempre (asTarjetaAccion). No usa la IA ni gasta las 25 preguntas.
+  // =====================================================================
+  let asCarga = null, asCargaId = 0;
+  const asCap = m => m.charAt(0)+m.slice(1).toLowerCase();
+  const AS_RE_VERBO_CARGA = /\b(carga(me|r|lo|la)?|agrega(me|r)?|anota(me|r)?|registra(me|r)?|asienta(me|r)?)\b/;
+  const AS_RE_PASADO_CARGA = /\b(vendi|gaste|compre|pague|cobre|deposite|retire|me entraron|me pagaron)\b/;
+  function asParseMonto(t){
+    let s = ' ' + asNorm(t).replace(/\$/g,' ') + ' ';
+    const meses = MESES.map(m=>asNorm(m)).join('|');
+    s = s.replace(new RegExp('\\b\\d{1,2}\\s+de\\s+('+meses+')\\b','g'),' ').replace(new RegExp('\\b('+meses+'|de|del|ano)\\s+20\\d\\d\\b','g'),' $1 ');
+    const PAL = { un:1, uno:1, dos:2, tres:3, cuatro:4, cinco:5, seis:6, siete:7, ocho:8, nueve:9, diez:10, quince:15, veinte:20, treinta:30, cuarenta:40, cincuenta:50 };
+    const mp = s.match(/\b(un|uno|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|quince|veinte|treinta|cuarenta|cincuenta)\s+mil\b/);
+    const mt = s.match(/\d[\d.,]*/);
+    if(mt && (!mp || mt.index < mp.index)){
+      let tok = mt[0].replace(/[.,]+$/,''), n;
+      if(tok.includes(',')) n = parseFloat(tok.replace(/\./g,'').replace(',','.'));
+      else if(/^\d{1,3}(\.\d{3})+$/.test(tok)) n = parseFloat(tok.replace(/\./g,''));
+      else n = parseFloat(tok);
+      const resto = s.slice(mt.index + mt[0].length);
+      if(/^\s*(mil|k)\b/.test(resto)) n *= 1000;
+      return (n>0 && isFinite(n)) ? Math.round(n*100)/100 : null;
+    }
+    if(mp) return PAL[mp[1]]*1000;
+    return null;
+  }
+  function asParseMes(t){
+    const n = asNorm(t), h = iniHoy();
+    const m = MESES.find(x=>new RegExp('\\b'+asNorm(x)+'\\b').test(n));
+    const ya = n.match(/\b(20\d\d)\b/);
+    if(m) return { mes:m, anio: ya ? parseInt(ya[1],10) : (periodoKey(h.anio,m) > periodoKey(h.anio,h.mes) ? h.anio-1 : h.anio) };
+    if(/mes pasado|mes anterior|anterior/.test(n)){ const i = MESES.indexOf(h.mes); return i>0 ? { mes:MESES[i-1], anio:h.anio } : { mes:MESES[11], anio:h.anio-1 }; }
+    if(/\bhoy\b|este mes|ahora|actual/.test(n)) return { mes:h.mes, anio:h.anio };
+    return null;
+  }
+  function asEsCarga(t){
+    const n = asNorm(t);
+    const empiezaPregunta = /^\s*(cuanto|cuanta|cuantos|cuantas|como|cual|cuales|que |en que|donde|por que|quien|cuando)/.test(n);
+    if(AS_RE_VERBO_CARGA.test(n)) return !empiezaPregunta || /carg|agreg|anot|registr/.test(n);
+    return AS_RE_PASADO_CARGA.test(n) && !/\?/.test(t) && !empiezaPregunta && asParseMonto(t)!=null;
+  }
+  function asOpcion(texto, opciones){            // opciones: [{v,l}] → {uno} | {varias} | null
+    const n = asNorm(texto).trim(); if(!n) return null;
+    const ex = opciones.filter(o=>asNorm(o.l).trim()===n || asNorm(String(o.v)).trim()===n);
+    if(ex.length===1) return { uno:ex[0] };
+    const parc = opciones.filter(o=>asNorm(o.l).includes(n) || n.includes(asNorm(o.l).trim()));
+    if(parc.length===1) return { uno:parc[0] };
+    if(parc.length>1) return { varias:parc };
+    return null;
+  }
+  // Mira la frase y se queda con lo que dijiste explícitamente (lo demás lo pregunta).
+  function asEntenderCarga(t, data){
+    const n = asNorm(t), c = { };
+    const monto = asParseMonto(t); if(monto) c.monto = monto;
+    const mes = asParseMes(t); if(mes){ c.mes = mes.mes; c.anio = mes.anio; }
+    const cat = asCatalogoMovimientos(data), cuentas = Object.keys(cat);
+    if(/gestion/.test(n)) c.destino = 'gestion';
+    if(/movimiento|\bcuenta\b|diario/.test(n)) c.destino = 'mov';
+    cuentas.forEach(k=>{ const kn = asNorm(k).trim(); if(kn && kn!=='efectivo' && new RegExp('\\b'+kn.replace(/s$/,'')+'s?\\b').test(n)){ c.cuenta = k; c.destino = 'mov'; } });
+    if(c.destino==='mov' && !c.cuenta){ const e = cuentas.find(k=>asNorm(k).trim()==='efectivo'); if(e && /efectivo|caja/.test(n)) c.cuenta = e; }
+    if(/\bvend|\bventa/.test(n)) c.tipoG = 'venta'; else if(/\bcompr|reposicion|pedido/.test(n)) c.tipoG = 'compra'; else if(/\bgast|\bpagu/.test(n)) c.tipoG = 'gasto';
+    if(/credito|tarjeta/.test(n)) c.campoV = 'credito'; else if(c.destino!=='mov' && /efectivo|contado/.test(n)) c.campoV = 'efectivo';
+    if(/inicial|pedido/.test(n)) c.campoC = 'inicial'; else if(/repos/.test(n)) c.campoC = 'reposicion'; else if(/\botros?\b/.test(n) && c.tipoG==='compra') c.campoC = 'otros';
+    if(/ingres|cobr|entr|vend|venta|deposit/.test(n)) c.mov = 'ingreso'; else if(/gast|pagu|sali|egres|retir/.test(n)) c.mov = 'gasto';
+    const items = asCategoriasGasto(data).map(x=>x.nombre).filter(x=>asNorm(x).length>=3 && n.includes(asNorm(x))).sort((a,b)=>b.length-a.length);
+    if(items.length) c.item = items[0];
+    return c;
+  }
+  function asCargaLlevo(){
+    const c = asCarga, bits = [];
+    if(c.monto) bits.push('$ '+fmt(c.monto));
+    if(c.destino) bits.push(c.destino==='gestion' ? 'Gestión' : 'Movimientos diarios');
+    if(c.destino==='gestion' && c.tipoG) bits.push({venta:'venta',compra:'compra',gasto:'gasto fijo'}[c.tipoG]);
+    if(c.campoV) bits.push(c.campoV==='credito'?'crédito':'efectivo');
+    if(c.campoC) bits.push({inicial:'pedido inicial',reposicion:'reposición',otros:'otros'}[c.campoC]);
+    if(c.item) bits.push(c.item);
+    if(c.cuenta) bits.push('cuenta '+c.cuenta);
+    if(c.destino==='mov' && c.mov) bits.push(c.mov);
+    if(c.categoria) bits.push(c.categoria);
+    if(c.mes) bits.push(asCap(c.mes)+' '+c.anio);
+    return bits.length ? `<div class="as-llevo">Llevo: ${bits.map(escapeHtml).join(' · ')}</div>` : '';
+  }
+  function asCerrarPreguntas(){ document.querySelectorAll('#asMsgs .as-qr:not([data-hecho])').forEach(q=>{ q.dataset.hecho = '1'; }); }
+  function asPregunta(paso, titulo, opciones){
+    asCerrarPreguntas();
+    asCarga.paso = paso; asCarga.opciones = opciones;
+    const bot = opciones.map((o,i)=>`<button type="button" data-asq="${i}">${escapeHtml(o.l)}</button>`).join('') + '<button type="button" class="cancel" data-asq="x">Cancelar</button>';
+    const d = asAgregar('bot', `${asCargaLlevo()}<p style="margin:0">${titulo}</p><div class="as-qr" data-fid="${asCargaId}">${bot}</div>`);
+    return d;
+  }
+  function asPreguntaTexto(paso, titulo){
+    asCerrarPreguntas();
+    asCarga.paso = paso; asCarga.opciones = null;
+    asAgregar('bot', `${asCargaLlevo()}<p style="margin:0">${titulo}</p><div class="as-qr" data-fid="${asCargaId}"><button type="button" class="cancel" data-asq="x">Cancelar</button></div>`);
+  }
+  function asCargaCancelar(msg){ asCerrarPreguntas(); asCarga = null; asCargaId++; if(msg) asAgregar('bot','<p>Listo, cancelé la carga. No se guardó nada.</p>'); }
+  async function asCargaSiguiente(){
+    const c = asCarga; if(!c) return;
+    const data = await asAsegurarDatos();
+    if(!data){ asAgregar('bot','<p>No pude leer los datos del dashboard ahora. Probá de nuevo en un momento.</p>'); asCarga = null; return; }
+    const hoy = iniHoy();
+    if(!c.destino) return asPregunta('destino','¿Dónde lo cargo?',[{v:'gestion',l:'Gestión (ventas, compras, gastos)'},{v:'mov',l:'Movimientos diarios (efectivo, BROU, ITAÚ, cheques)'}]);
+    if(c.destino==='gestion'){
+      if(!c.tipoG) return asPregunta('tipoG','En Gestión, ¿qué es?',[{v:'venta',l:'Venta'},{v:'compra',l:'Compra'},{v:'gasto',l:'Gasto fijo'}]);
+      if(c.tipoG==='venta' && !c.campoV) return asPregunta('campoV','¿Es venta en efectivo o en crédito?',[{v:'efectivo',l:'Efectivo'},{v:'credito',l:'Crédito'}]);
+      if(c.tipoG==='compra' && !c.campoC) return asPregunta('campoC','¿A qué tipo de compra corresponde?',[{v:'inicial',l:'Pedido inicial'},{v:'reposicion',l:'Reposición'},{v:'otros',l:'Otros'}]);
+      if(c.tipoG==='gasto' && !c.item){
+        const its = asCategoriasGasto(data);
+        if(!its.length){ asAgregar('bot','<p>No encuentro ítems de gasto cargados. Creá el ítem primero en Gestión → Gastos.</p>'); asCarga = null; return; }
+        return asPregunta('item','¿A qué ítem de gasto va? (podés tocar uno o escribir el nombre)', its.map(x=>({v:x.nombre,l:x.nombre})));
+      }
+    } else {
+      const cat = asCatalogoMovimientos(data);
+      if(!c.cuenta){
+        const ks = Object.keys(cat).sort((a,b)=>{ const i = FLUJO_CUENTA_ORDEN.indexOf(a.toUpperCase()), j = FLUJO_CUENTA_ORDEN.indexOf(b.toUpperCase()); return (i<0?99:i)-(j<0?99:j); });
+        if(!ks.length){ asAgregar('bot','<p>No encuentro cuentas con movimientos cargados todavía. Cargá el primer movimiento a mano en Movimientos diarios.</p>'); asCarga = null; return; }
+        return asPregunta('cuenta','¿En qué cuenta?', ks.map(k=>({v:k,l:k})));
+      }
+      if(!c.mov) return asPregunta('mov','¿Es un ingreso o un gasto?',[{v:'ingreso',l:'Ingreso'},{v:'gasto',l:'Gasto'}]);
+      if(!c.categoria){
+        const lista = (c.mov==='ingreso' ? cat[c.cuenta].categorias_de_ingreso : cat[c.cuenta].categorias_de_gasto) || [];
+        if(!lista.length){ asAgregar('bot',`<p>En ${escapeHtml(c.cuenta)} todavía no hay categorías de ${c.mov}. Creá la categoría primero en Movimientos diarios y volvemos a intentarlo.</p>`); asCarga = null; return; }
+        return asPregunta('categoria',`¿A qué categoría de ${c.mov} de ${escapeHtml(c.cuenta)} corresponde?`, lista.map(x=>({v:x,l:x})));
+      }
+    }
+    if(!c.monto) return asPreguntaTexto('monto','¿Qué monto? (escribilo o dictalo, por ejemplo 5000)');
+    if(!c.mes){
+      const i = MESES.indexOf(hoy.mes), ant = i>0 ? { mes:MESES[i-1], anio:hoy.anio } : { mes:MESES[11], anio:hoy.anio-1 };
+      return asPregunta('mes','¿Para qué mes?',[{v:'hoy',l:asCap(hoy.mes)+' '+hoy.anio+' (este mes)'},{v:'ant',l:asCap(ant.mes)+' '+ant.anio},{v:'otro',l:'Otro mes…'}]);
+    }
+    // Todo definido → tarjeta de confirmación (la misma de siempre)
+    let raw;
+    if(c.destino==='gestion'){
+      if(c.tipoG==='venta') raw = { tipo:'agregar_venta', detalle:c.campoV };
+      else if(c.tipoG==='compra') raw = { tipo:'agregar_compra', detalle:c.campoC };
+      else raw = { tipo:'agregar_gasto', categoria:c.item };
+    } else raw = { tipo:'agregar_movimiento', cuenta:c.cuenta, detalle:c.mov, categoria:c.categoria };
+    Object.assign(raw, { mes:c.mes, anio:c.anio, monto:c.monto });
+    const v = asValidarAccion(raw, data);
+    const llevo = asCargaLlevo();
+    asCerrarPreguntas(); asCarga = null; asCargaId++;
+    if(!v){ asAgregar('bot','<p>No pude armar esa carga con seguridad. Empecemos de nuevo: decime qué querés cargar.</p>'); return; }
+    asAgregar('bot', llevo.replace('Llevo:','Entendí:') + asTarjetaAccion(v));
+  }
+  async function asCargaAplicar(paso, v){
+    const c = asCarga; if(!c) return;
+    if(paso==='destino') c.destino = v;
+    else if(paso==='tipoG') c.tipoG = v;
+    else if(paso==='campoV') c.campoV = v;
+    else if(paso==='campoC') c.campoC = v;
+    else if(paso==='item') c.item = v;
+    else if(paso==='cuenta') c.cuenta = v;
+    else if(paso==='mov') c.mov = v;
+    else if(paso==='categoria') c.categoria = v;
+    else if(paso==='mes'){
+      const h = iniHoy();
+      if(v==='hoy'){ c.mes = h.mes; c.anio = h.anio; }
+      else if(v==='ant'){ const i = MESES.indexOf(h.mes); if(i>0){ c.mes = MESES[i-1]; c.anio = h.anio; } else { c.mes = MESES[11]; c.anio = h.anio-1; } }
+      else { asPreguntaTexto('mesTxt','Escribime el mes (por ejemplo "agosto" o "agosto 2025").'); return; }
+    }
+    // Si cambió el destino, lo ya elegido del otro lado no vale
+    if(paso==='destino'){ if(v==='gestion'){ c.cuenta = null; c.mov = c.mov; } else { c.tipoG = null; c.campoV = null; c.campoC = null; c.item = null; } }
+    await asCargaSiguiente();
+  }
+  // Texto escrito (o dictado) mientras hay una carga en curso.
+  async function asCargaTexto(t){
+    const c = asCarga, n = asNorm(t).trim();
+    if(/^(cancel|dej[ae]|olvid|no quiero|basta|nada)/.test(n)){ asCargaCancelar(true); return; }
+    if(c.paso==='monto'){ const m = asParseMonto(t); if(!m){ asAgregar('bot','<p>No entendí el monto. Escribilo como número, por ejemplo <b>5000</b>.</p>'); return; } c.monto = m; return asCargaSiguiente(); }
+    if(c.paso==='mesTxt'){ const m = asParseMes(t); if(!m){ asAgregar('bot','<p>No entendí el mes. Probá con "agosto" o "agosto 2025".</p>'); return; } c.mes = m.mes; c.anio = m.anio; return asCargaSiguiente(); }
+    const ops = c.opciones || [];
+    let r = asOpcion(t, ops);
+    if(!r){   // alias frecuentes
+      const al = { destino: /gestion/.test(n)?'gestion':/movimiento|diario|cuenta/.test(n)?'mov':null, tipoG: /vent/.test(n)?'venta':/compr/.test(n)?'compra':/gast/.test(n)?'gasto':null,
+        campoV: /credito|tarjeta/.test(n)?'credito':/efectivo|contado/.test(n)?'efectivo':null, campoC: /inicial|pedido/.test(n)?'inicial':/repos/.test(n)?'reposicion':/otro/.test(n)?'otros':null,
+        mov: /ingres|cobr|entr/.test(n)?'ingreso':/gast|pagu|sali/.test(n)?'gasto':null, mes: /otro/.test(n)?'otro':/pasado|anterior/.test(n)?'ant':/hoy|este|actual/.test(n)?'hoy':null }[c.paso];
+      if(al) r = { uno:{ v:al } };
+    }
+    if(!r){ asAgregar('bot','<p>No te entendí. Elegí una de las opciones de arriba, escribila de nuevo o decí <b>cancelar</b>.</p>'); return; }
+    if(r.varias){ asPregunta(c.paso,'Encontré varias parecidas, ¿cuál?', r.varias); return; }
+    return asCargaAplicar(c.paso, r.uno.v);
+  }
+  async function asCargaIniciar(t){
+    const data = await asAsegurarDatos();
+    if(!data){ asAgregar('bot','<p>No pude leer los datos del dashboard ahora. Probá de nuevo en un momento.</p>'); return; }
+    asCarga = Object.assign({ paso:null, opciones:null }, asEntenderCarga(t, data)); asCargaId++;
+    const ch = document.getElementById('asChips'); if(ch) ch.classList.add('hide');
+    asAgregar('bot','<p style="margin:0">Dale, te voy preguntando para cargarlo bien. Antes de guardar siempre te muestro una tarjeta para que confirmes.</p>');
+    await asCargaSiguiente();
+  }
+  function asClickPregunta(btn){
+    const box = btn.closest('.as-qr'); if(!box || box.dataset.hecho) return;
+    if(!asCarga || String(asCargaId)!==box.dataset.fid){ box.dataset.hecho = '1'; showToast('Esa carga ya no está activa', true); return; }
+    box.dataset.hecho = '1'; btn.classList.add('sel');
+    if(btn.dataset.asq==='x'){ asAgregar('yo','Cancelar'); asCargaCancelar(true); return; }
+    const o = (asCarga.opciones||[])[parseInt(btn.dataset.asq,10)]; if(!o) return;
+    asAgregar('yo', escapeHtml(o.l));
+    asCargaAplicar(asCarga.paso, o.v);
+  }
+
+  // =====================================================================
+  // VOZ: dictado del navegador (SpeechRecognition). Lo que decís aparece escrito para que lo revises
+  // antes de enviarlo. El audio no pasa por Supabase ni por Gemini.
+  // =====================================================================
+  const AS_SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let asRec = null, asRecBtn = null;
+  function asVozParar(){ if(asRec){ try{ asRec.stop(); }catch(e){} } }
+  function asVoz(btn, getEl){
+    if(!AS_SR){ showToast('Tu navegador no permite dictado por voz. Probá con Chrome, o usá el micrófono del teclado del celular.', true); return; }
+    if(asRec){ const mismo = asRecBtn===btn; asVozParar(); if(mismo) return; }
+    const el = getEl(); const base = el.value ? el.value.replace(/\s+$/,'')+' ' : '';
+    const rec = new AS_SR(); asRec = rec; asRecBtn = btn;
+    rec.lang = 'es-UY'; rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1;
+    btn.classList.add('rec'); btn.title = 'Escuchando… tocá para parar';
+    rec.onresult = ev=>{
+      let txt = ''; for(let i=0;i<ev.results.length;i++) txt += ev.results[i][0].transcript;
+      el.value = base + txt.trim(); el.dispatchEvent(new Event('input'));
+    };
+    rec.onerror = ev=>{
+      const e = ev.error;
+      if(e==='not-allowed' || e==='service-not-allowed') showToast('Necesito permiso para usar el micrófono (tocá el candado de la barra del navegador).', true);
+      else if(e==='no-speech') showToast('No te escuché. Probá de nuevo.', true);
+      else if(e==='network') showToast('El dictado necesita conexión a internet.', true);
+      else if(e!=='aborted') showToast('No pude dictar ('+e+').', true);
+    };
+    rec.onend = ()=>{ btn.classList.remove('rec'); btn.title = 'Hablarle a MiDash (dictado por voz)'; if(asRec===rec){ asRec = null; asRecBtn = null; } try{ el.focus(); }catch(e){} };
+    try{ rec.start(); }catch(e){ btn.classList.remove('rec'); asRec = null; showToast('No pude iniciar el micrófono.', true); }
+  }
   function asSaludo(){
-    asAgregar('bot', '<details class="as-hola" open><summary>Hola, soy el asistente del dashboard</summary><p>Con el interruptor <b>IA</b> activado podés escribir lo que quieras sobre tus números (<i>"¿en qué mes gasté más?"</i>) o pedirme cargar ventas, compras o gastos (<i>"agregá $4.500 de luz en octubre"</i>, <i>"vendí $80.000 en efectivo hoy"</i>, <i>"compra de reposición por $120.000"</i>). Siempre te muestro una tarjeta para confirmar antes de guardar. Sin la IA respondo con cálculos fijos.</p><p>A la IA solo le llegan <b>resúmenes sin nombres</b> de proveedores ni deudas. <a href="#" data-asver onclick="return false" style="color:var(--accent-ink);">Ver qué se envía</a></p><p style="margin-bottom:0">También podés elegir una pregunta de la lista (con <b>?</b>).</p></details>');
+    asAgregar('bot', '<details class="as-hola"><summary>Cómo funciono y qué ve la IA</summary><p>Con el interruptor <b>IA</b> activado podés escribir lo que quieras sobre tus números (<i>"¿en qué mes gasté más?"</i>) o pedirme cargar ventas, compras o gastos (<i>"agregá $4.500 de luz en octubre"</i>, <i>"vendí $80.000 en efectivo hoy"</i>, <i>"compra de reposición por $120.000"</i>). Siempre te muestro una tarjeta para confirmar antes de guardar. Sin la IA respondo con cálculos fijos.</p><p>A la IA solo le llegan <b>resúmenes sin nombres</b> de proveedores ni deudas. <a href="#" data-asver onclick="return false" style="color:var(--accent-ink);">Ver qué se envía</a></p><p style="margin-bottom:0">También podés elegir una pregunta de la lista (con <b>?</b>).</p></details>');
   }
   function asReiniciar(){
     document.getElementById('asMsgs').innerHTML = '';
+    asCarga = null; asCargaId++; asVozParar();
     document.getElementById('asChips').classList.remove('hide');
     document.getElementById('asInput').value = '';
     asDesbloqueado = false;
     asSaludo();
+    asMostrarInicio();
   }
   function initAsistente(){
     const fab = document.getElementById('asFab'), panel = document.getElementById('asPanel');
@@ -6241,16 +6571,38 @@
     const abrir = ()=>{
       panel.classList.add('open');
       const msgs = document.getElementById('asMsgs');
-      if(!msgs.children.length) asSaludo();
+      if(!msgs.children.length){ asSaludo(); asMostrarInicio(); }
       if(!state.iniData || Date.now() - (state.iniCargadoEn||0) > 60000) loadInicio();
-      setTimeout(()=>document.getElementById('asInput').focus(), 50);
+      if(!asEnInicio()) setTimeout(()=>document.getElementById('asInput').focus(), 50);
     };
-    const cerrar = ()=>{ panel.classList.remove('open'); asDesbloqueado = false; };
+    const cerrar = ()=>{ panel.classList.remove('open'); asDesbloqueado = false; asVozParar(); };
     fab.addEventListener('click', ()=> panel.classList.contains('open') ? cerrar() : abrir());
     document.getElementById('asClose').addEventListener('click', cerrar);
     document.getElementById('asReset').addEventListener('click', asReiniciar);
     document.getElementById('asEye').addEventListener('click', ()=>panel.classList.toggle('as-reveal'));
     document.getElementById('asIaChk').addEventListener('change', ev=>{ asIaOn = ev.target.checked; try{ localStorage.setItem('vt_as_ia', asIaOn?'1':'0'); }catch(e){} asActualizarModo(); });
+    const tit = document.getElementById('asTitulo'); if(tit) tit.textContent = AS_NOMBRE;
+    document.getElementById('asNombreEm').textContent = AS_NOMBRE;
+    const pills = document.getElementById('asPills');
+    pills.innerHTML = AS_PASTILLAS.map(k=>`<button type="button" data-aspill="${k}">${AS_ETIQUETA[k]}</button>`).join('') + '<button type="button" data-ascargar>➕ Quiero cargar algo</button><button type="button" class="todas" data-astodas>Ver todas las preguntas</button>';
+    pills.addEventListener('click', ev=>{
+      const b = ev.target.closest('button'); if(!b) return;
+      if(b.dataset.aspill) asEnviarDesdeInicio(b.dataset.aspill);
+      else if(b.hasAttribute('data-ascargar')){ asMostrarChat(); asPreguntar(null,'Quiero cargar algo'); }
+      else if(b.hasAttribute('data-astodas')){ asMostrarChat(); chips.classList.remove('hide'); }
+    });
+    const hin = document.getElementById('asHomeInput');
+    hin.addEventListener('input', ()=>{ hin.style.height = 'auto'; hin.style.height = Math.min(hin.scrollHeight,140)+'px'; });
+    hin.addEventListener('keydown', ev=>{ if(ev.key==='Enter' && !ev.shiftKey){ ev.preventDefault(); asEnviarDesdeInicio(); } });
+    document.getElementById('asHomeSend').addEventListener('click', ()=>asEnviarDesdeInicio());
+    document.getElementById('asLive').addEventListener('click', ev=>{ if(ev.target.closest('[data-asquever]')){ asMostrarChat(); asVerEnviado(); } });
+    document.getElementById('asHomeBtn').addEventListener('click', asMostrarInicio);
+    document.getElementById('asMsgs').addEventListener('click', ev=>{ const b = ev.target.closest('button[data-asq]'); if(b) asClickPregunta(b); });
+    const mh = document.getElementById('asHomeMic'), mc = document.getElementById('asMic');
+    mh.addEventListener('click', ()=>asVoz(mh, ()=>document.getElementById('asHomeInput')));
+    mc.addEventListener('click', ()=>asVoz(mc, ()=>document.getElementById('asInput')));
+    document.getElementById('asFull').addEventListener('click', ()=>asAplicarFull(!panel.classList.contains('as-full')));
+    try{ if(localStorage.getItem('vt_as_full')==='1') panel.classList.add('as-full'); }catch(e){}
     asActualizarModo();
     document.getElementById('asMsgs').addEventListener('click', ev=>{
       const b = ev.target.closest('button[data-asacc]'); if(b) asClickAccion(b);
